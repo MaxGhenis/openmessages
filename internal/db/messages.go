@@ -7,8 +7,8 @@ import (
 
 func (s *Store) UpsertMessage(m *Message) error {
 	_, err := s.db.Exec(`
-		INSERT INTO messages (message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO messages (message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me, media_id, mime_type, decryption_key, reactions, reply_to_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(message_id) DO UPDATE SET
 			conversation_id=excluded.conversation_id,
 			sender_name=excluded.sender_name,
@@ -16,14 +16,19 @@ func (s *Store) UpsertMessage(m *Message) error {
 			body=excluded.body,
 			timestamp_ms=excluded.timestamp_ms,
 			status=excluded.status,
-			is_from_me=excluded.is_from_me
-	`, m.MessageID, m.ConversationID, m.SenderName, m.SenderNumber, m.Body, m.TimestampMS, m.Status, m.IsFromMe)
+			is_from_me=excluded.is_from_me,
+			media_id=excluded.media_id,
+			mime_type=excluded.mime_type,
+			decryption_key=excluded.decryption_key,
+			reactions=excluded.reactions,
+			reply_to_id=excluded.reply_to_id
+	`, m.MessageID, m.ConversationID, m.SenderName, m.SenderNumber, m.Body, m.TimestampMS, m.Status, m.IsFromMe, m.MediaID, m.MimeType, m.DecryptionKey, m.Reactions, m.ReplyToID)
 	return err
 }
 
 func (s *Store) GetMessagesByConversation(conversationID string, limit int) ([]*Message, error) {
 	rows, err := s.db.Query(`
-		SELECT message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me
+		SELECT message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me, media_id, mime_type, decryption_key, reactions, reply_to_id
 		FROM messages
 		WHERE conversation_id = ?
 		ORDER BY timestamp_ms DESC
@@ -53,7 +58,7 @@ func (s *Store) GetMessages(phoneNumber string, afterMS, beforeMS int64, limit i
 		args = append(args, beforeMS)
 	}
 
-	query := `SELECT message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me FROM messages`
+	query := `SELECT message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me, media_id, mime_type, decryption_key, reactions, reply_to_id FROM messages`
 	if len(conditions) > 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
@@ -80,7 +85,7 @@ func (s *Store) SearchMessages(query, phoneNumber string, limit int) ([]*Message
 		args = append(args, phoneNumber)
 	}
 
-	q := `SELECT message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me FROM messages`
+	q := `SELECT message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me, media_id, mime_type, decryption_key, reactions, reply_to_id FROM messages`
 	if len(conditions) > 0 {
 		q += " WHERE " + strings.Join(conditions, " AND ")
 	}
@@ -95,6 +100,22 @@ func (s *Store) SearchMessages(query, phoneNumber string, limit int) ([]*Message
 	return scanMessages(rows)
 }
 
+func (s *Store) GetMessageByID(messageID string) (*Message, error) {
+	row := s.db.QueryRow(`
+		SELECT message_id, conversation_id, sender_name, sender_number, body, timestamp_ms, status, is_from_me, media_id, mime_type, decryption_key, reactions, reply_to_id
+		FROM messages WHERE message_id = ?
+	`, messageID)
+	m := &Message{}
+	err := row.Scan(&m.MessageID, &m.ConversationID, &m.SenderName, &m.SenderNumber, &m.Body, &m.TimestampMS, &m.Status, &m.IsFromMe, &m.MediaID, &m.MimeType, &m.DecryptionKey, &m.Reactions, &m.ReplyToID)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return m, nil
+}
+
 func scanMessages(rows interface {
 	Next() bool
 	Scan(...any) error
@@ -103,7 +124,7 @@ func scanMessages(rows interface {
 	var msgs []*Message
 	for rows.Next() {
 		m := &Message{}
-		if err := rows.Scan(&m.MessageID, &m.ConversationID, &m.SenderName, &m.SenderNumber, &m.Body, &m.TimestampMS, &m.Status, &m.IsFromMe); err != nil {
+		if err := rows.Scan(&m.MessageID, &m.ConversationID, &m.SenderName, &m.SenderNumber, &m.Body, &m.TimestampMS, &m.Status, &m.IsFromMe, &m.MediaID, &m.MimeType, &m.DecryptionKey, &m.Reactions, &m.ReplyToID); err != nil {
 			return nil, err
 		}
 		msgs = append(msgs, m)

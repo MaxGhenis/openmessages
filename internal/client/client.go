@@ -66,6 +66,82 @@ func ExtractMessageBody(msg *gmproto.Message) string {
 	return ""
 }
 
+// MediaInfo holds extracted media metadata from a protobuf Message.
+type MediaInfo struct {
+	MediaID       string
+	MimeType      string
+	MediaName     string
+	DecryptionKey []byte
+	Size          int64
+}
+
+// ExtractMediaInfo extracts media content from a protobuf Message.
+// Returns nil if the message has no media attachment.
+func ExtractMediaInfo(msg *gmproto.Message) *MediaInfo {
+	for _, info := range msg.GetMessageInfo() {
+		if mc := info.GetMediaContent(); mc != nil {
+			mime := mc.GetMimeType()
+			if mime == "" {
+				// Derive from format enum
+				switch {
+				case mc.GetFormat() >= 1 && mc.GetFormat() <= 7:
+					mime = "image/jpeg"
+				default:
+					mime = "application/octet-stream"
+				}
+			}
+			return &MediaInfo{
+				MediaID:       mc.GetMediaID(),
+				MimeType:      mime,
+				MediaName:     mc.GetMediaName(),
+				DecryptionKey: mc.GetDecryptionKey(),
+				Size:          mc.GetSize(),
+			}
+		}
+	}
+	return nil
+}
+
+// Reaction holds an emoji and how many people reacted with it.
+type Reaction struct {
+	Emoji string `json:"emoji"`
+	Count int    `json:"count"`
+}
+
+// ExtractReactions extracts reaction data from a protobuf Message.
+// Returns nil if there are no reactions.
+func ExtractReactions(msg *gmproto.Message) []Reaction {
+	entries := msg.GetReactions()
+	if len(entries) == 0 {
+		return nil
+	}
+	var reactions []Reaction
+	for _, entry := range entries {
+		if data := entry.GetData(); data != nil {
+			emoji := data.GetUnicode()
+			if emoji == "" {
+				continue
+			}
+			reactions = append(reactions, Reaction{
+				Emoji: emoji,
+				Count: len(entry.GetParticipantIDs()),
+			})
+		}
+	}
+	if len(reactions) == 0 {
+		return nil
+	}
+	return reactions
+}
+
+// ExtractReplyToID extracts the replied-to message ID, if any.
+func ExtractReplyToID(msg *gmproto.Message) string {
+	if rm := msg.GetReplyMessage(); rm != nil {
+		return rm.GetMessageID()
+	}
+	return ""
+}
+
 // ExtractSenderInfo gets the sender name and number from a Message.
 func ExtractSenderInfo(msg *gmproto.Message) (name, number string) {
 	if p := msg.GetSenderParticipant(); p != nil {

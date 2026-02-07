@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/hex"
 	"encoding/json"
 
 	"github.com/rs/zerolog"
@@ -76,6 +77,19 @@ func (h *EventHandler) handleMessage(evt *libgm.WrappedMessage) {
 		Status:         status,
 		IsFromMe:       msg.GetSenderParticipant() != nil && msg.GetSenderParticipant().GetIsMe(),
 	}
+
+	if media := ExtractMediaInfo(msg); media != nil {
+		dbMsg.MediaID = media.MediaID
+		dbMsg.MimeType = media.MimeType
+		dbMsg.DecryptionKey = hex.EncodeToString(media.DecryptionKey)
+	}
+
+	if reactions := ExtractReactions(msg); reactions != nil {
+		if b, err := json.Marshal(reactions); err == nil {
+			dbMsg.Reactions = string(b)
+		}
+	}
+	dbMsg.ReplyToID = ExtractReplyToID(msg)
 
 	if err := h.Store.UpsertMessage(dbMsg); err != nil {
 		h.Logger.Error().Err(err).Str("msg_id", dbMsg.MessageID).Msg("Failed to store message")

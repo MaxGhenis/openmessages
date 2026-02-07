@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OpenMessages</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
@@ -325,6 +326,182 @@ html, body {
 
 .msg.sent .msg-time { color: rgba(250, 246, 241, 0.35); }
 
+.msg-image {
+  max-width: 320px;
+  max-height: 400px;
+  border-radius: var(--radius-md);
+  margin: 4px 0;
+  cursor: pointer;
+  display: block;
+  background: var(--bg-elevated);
+  min-height: 80px;
+  object-fit: contain;
+}
+
+.msg-image-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 120px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.msg.sent .msg-image { margin-left: auto; }
+
+.msg-image-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+.msg-image-fullscreen img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+/* ─── Reactions ─── */
+.msg-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--cream-soft);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.reaction-pill:hover {
+  background: var(--accent-dim);
+  border-color: var(--border-accent);
+}
+
+.reaction-pill .reaction-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ─── React Picker ─── */
+.react-picker {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  display: none;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  gap: 2px;
+  box-shadow: var(--shadow-soft);
+  z-index: 20;
+}
+
+.react-picker.show { display: flex; }
+
+.msg.sent .react-picker { right: 0; }
+.msg.received .react-picker { left: 0; }
+
+.react-picker button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.1s;
+  line-height: 1;
+}
+
+.react-picker button:hover {
+  background: var(--accent-dim);
+}
+
+/* ─── Reply Banner ─── */
+.msg-reply-banner {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-left: 2px solid var(--accent);
+  border-radius: 2px;
+  background: var(--cream-soft);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-reply-banner:hover {
+  background: var(--accent-dim);
+}
+
+.msg-reply-banner .reply-author {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ─── Reply Compose Indicator ─── */
+.reply-indicator {
+  display: none;
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+  align-items: center;
+  gap: 8px;
+}
+
+.reply-indicator.show { display: flex; }
+
+.reply-indicator .reply-preview {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-indicator .reply-preview span {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.reply-indicator .reply-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.reply-indicator .reply-close:hover {
+  background: var(--cream-soft);
+  color: var(--text-primary);
+}
+
 .date-divider {
   text-align: center;
   padding: 16px 0 8px;
@@ -499,6 +676,10 @@ html, body {
       </div>
     </div>
     <div class="messages-area" id="messages-area" style="display:none"></div>
+    <div class="reply-indicator" id="reply-indicator">
+      <div class="reply-preview">Replying to <span id="reply-to-name"></span>: <span id="reply-to-text"></span></div>
+      <button class="reply-close" id="reply-close">&times;</button>
+    </div>
     <div class="compose-bar" id="compose-bar" style="display:none">
       <textarea class="compose-input" id="compose-input" placeholder="Write a message..." rows="1"></textarea>
       <button class="send-btn" id="send-btn" disabled>
@@ -530,6 +711,13 @@ html, body {
   const $sendBtn = document.getElementById('send-btn');
   const $searchInput = document.getElementById('search-input');
   const $connectionBanner = document.getElementById('connection-banner');
+  const $replyIndicator = document.getElementById('reply-indicator');
+  const $replyToName = document.getElementById('reply-to-name');
+  const $replyToText = document.getElementById('reply-to-text');
+  const $replyClose = document.getElementById('reply-close');
+
+  let replyToMsg = null; // {MessageID, SenderName, Body}
+  const QUICK_EMOJIS = ['😂', '❤️', '👍', '😮', '😢', '🙏'];
 
   // ─── Utilities ───
   function initials(name) {
@@ -640,6 +828,7 @@ html, body {
     $chatHeaderName.textContent = convo.Name || 'Unknown';
     $chatHeaderStatus.textContent = convo.IsGroup ? 'Group' : 'SMS';
 
+    lastMsgCount = -1; // Force re-render on conversation switch
     await loadMessages(convo.ConversationID);
 
     // Start polling for new messages
@@ -678,12 +867,75 @@ html, body {
         el.className = 'msg ' + (m.IsFromMe ? 'sent' : 'received');
 
         let html = '';
+
+        // Reply banner
+        if (m.ReplyToID) {
+          const original = msgs.find(om => om.MessageID === m.ReplyToID);
+          const origName = original ? (original.SenderName || 'You') : '';
+          const origBody = original ? (original.Body || 'Media') : 'Original message';
+          html += `<div class="msg-reply-banner" data-reply-id="${escapeHtml(m.ReplyToID)}" onclick="scrollToMessage('${escapeHtml(m.ReplyToID)}')"><span class="reply-author">${escapeHtml(origName)}</span> ${escapeHtml(origBody.substring(0, 80))}</div>`;
+        }
+
         if (!m.IsFromMe && m.SenderName) {
           html += `<div class="msg-sender">${escapeHtml(m.SenderName)}</div>`;
         }
-        html += `<div class="msg-body">${escapeHtml(m.Body)}</div>`;
+        if (m.MediaID) {
+          const isImage = (m.MimeType || '').startsWith('image/');
+          if (isImage) {
+            html += `<div class="msg-image-loading" id="img-loading-${m.MessageID}">Loading image...</div>`;
+            html += `<img class="msg-image" src="/api/media/${encodeURIComponent(m.MessageID)}" alt="Image" style="display:none" onload="this.style.display='block';var ldr=document.getElementById('img-loading-${m.MessageID}');if(ldr)ldr.remove();" onerror="var ldr=document.getElementById('img-loading-${m.MessageID}');if(ldr)ldr.textContent='Failed to load'" onclick="showFullscreen(this.src)">`;
+          } else {
+            html += `<div style="font-size:13px;color:var(--text-secondary);padding:6px 0">Attachment: ${escapeHtml(m.MimeType || 'file')}</div>`;
+          }
+        }
+        if (m.Body) {
+          html += `<div class="msg-body">${escapeHtml(m.Body)}</div>`;
+        }
+        if (!m.Body && !m.MediaID) {
+          html += `<div class="msg-body" style="color:var(--text-muted);font-style:italic">Empty message</div>`;
+        }
+
+        // Reactions
+        if (m.Reactions) {
+          try {
+            const reactions = JSON.parse(m.Reactions);
+            if (reactions.length > 0) {
+              html += '<div class="msg-reactions">';
+              reactions.forEach(r => {
+                html += `<span class="reaction-pill" title="${r.count} reaction${r.count > 1 ? 's' : ''}">${r.emoji}<span class="reaction-count">${r.count > 1 ? r.count : ''}</span></span>`;
+              });
+              html += '</div>';
+            }
+          } catch(e) {}
+        }
+
         html += `<div class="msg-time">${formatMessageTime(m.TimestampMS)}</div>`;
+
+        // React picker (hidden by default, shown on hover/long-press)
+        html += `<div class="react-picker" id="react-${m.MessageID}">`;
+        QUICK_EMOJIS.forEach(e => {
+          html += `<button onclick="sendReaction('${m.MessageID}','${e}')">${e}</button>`;
+        });
+        html += '</div>';
+
         el.innerHTML = html;
+        el.dataset.msgId = m.MessageID;
+
+        // Double-click to reply
+        el.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          setReplyTo(m);
+        });
+
+        // Right-click (context menu) to show react picker
+        el.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          // Close any other open pickers
+          document.querySelectorAll('.react-picker.show').forEach(p => p.classList.remove('show'));
+          const picker = document.getElementById('react-' + m.MessageID);
+          if (picker) picker.classList.toggle('show');
+        });
+
         $messagesArea.appendChild(el);
       });
 
@@ -706,15 +958,19 @@ html, body {
 
     try {
       const convo = conversations.find(c => c.ConversationID === activeConvoId);
-      // We need a phone number. For now, use the conversation name as a hint.
-      // The real implementation would resolve conversation → participant number.
-      await postJSON('/api/send', {
+      const payload = {
         phone_number: convo?.Name || '',
         message: text,
         conversation_id: activeConvoId,
-      });
-      // Reload messages to see the sent one
+      };
+      if (replyToMsg) {
+        payload.reply_to_id = replyToMsg.MessageID;
+      }
+      await postJSON('/api/send', payload);
+      clearReply();
+      // Reload both messages and conversations so sent-to chat jumps to top
       await loadMessages(activeConvoId);
+      await loadConversations();
     } catch (err) {
       console.error('Failed to send:', err);
     }
@@ -790,6 +1046,60 @@ html, body {
       console.error('Failed to load conversations:', err);
     }
   }
+
+  // ─── Reactions ───
+  window.sendReaction = async function(messageId, emoji) {
+    // Close picker
+    document.querySelectorAll('.react-picker.show').forEach(p => p.classList.remove('show'));
+    try {
+      await postJSON('/api/react', { message_id: messageId, emoji: emoji });
+      // Reload to see updated reactions
+      if (activeConvoId) await loadMessages(activeConvoId);
+    } catch (err) {
+      console.error('Failed to send reaction:', err);
+    }
+  };
+
+  // Close react picker when clicking elsewhere
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.react-picker') && !e.target.closest('.msg')) {
+      document.querySelectorAll('.react-picker.show').forEach(p => p.classList.remove('show'));
+    }
+  });
+
+  // ─── Reply ───
+  function setReplyTo(msg) {
+    replyToMsg = msg;
+    $replyToName.textContent = msg.SenderName || 'You';
+    $replyToText.textContent = (msg.Body || 'Media').substring(0, 80);
+    $replyIndicator.classList.add('show');
+    $composeInput.focus();
+  }
+
+  function clearReply() {
+    replyToMsg = null;
+    $replyIndicator.classList.remove('show');
+  }
+
+  $replyClose.addEventListener('click', clearReply);
+
+  window.scrollToMessage = function(msgId) {
+    const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.outline = '2px solid var(--accent)';
+      setTimeout(() => { el.style.outline = ''; }, 1500);
+    }
+  };
+
+  // ─── Fullscreen Image Viewer ───
+  window.showFullscreen = function(src) {
+    const overlay = document.createElement('div');
+    overlay.className = 'msg-image-fullscreen';
+    overlay.innerHTML = `<img src="${src}" alt="Full size">`;
+    overlay.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
+  };
 
   // ─── Init ───
   loadConversations();

@@ -270,6 +270,175 @@ func TestContactCRUD(t *testing.T) {
 	}
 }
 
+func TestMessageMediaFields(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create db: %v", err)
+	}
+	defer store.Close()
+
+	msg := &Message{
+		MessageID:      "msg-img",
+		ConversationID: "c1",
+		Body:           "",
+		TimestampMS:    1000,
+		MediaID:        "media-123",
+		MimeType:       "image/jpeg",
+		DecryptionKey:  "aabbccdd",
+	}
+	if err := store.UpsertMessage(msg); err != nil {
+		t.Fatalf("upsert message with media: %v", err)
+	}
+
+	msgs, err := store.GetMessagesByConversation("c1", 10)
+	if err != nil {
+		t.Fatalf("get messages: %v", err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1, got %d", len(msgs))
+	}
+	if msgs[0].MediaID != "media-123" {
+		t.Errorf("expected MediaID 'media-123', got %q", msgs[0].MediaID)
+	}
+	if msgs[0].MimeType != "image/jpeg" {
+		t.Errorf("expected MimeType 'image/jpeg', got %q", msgs[0].MimeType)
+	}
+	if msgs[0].DecryptionKey != "aabbccdd" {
+		t.Errorf("expected DecryptionKey 'aabbccdd', got %q", msgs[0].DecryptionKey)
+	}
+}
+
+func TestGetMessageByID(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create db: %v", err)
+	}
+	defer store.Close()
+
+	msg := &Message{
+		MessageID:      "msg-1",
+		ConversationID: "c1",
+		Body:           "Hello",
+		MediaID:        "media-abc",
+		MimeType:       "image/png",
+		DecryptionKey:  "deadbeef",
+		TimestampMS:    1000,
+	}
+	store.UpsertMessage(msg)
+
+	got, err := store.GetMessageByID("msg-1")
+	if err != nil {
+		t.Fatalf("get message by id: %v", err)
+	}
+	if got == nil {
+		t.Fatal("expected message, got nil")
+	}
+	if got.MediaID != "media-abc" {
+		t.Errorf("expected MediaID 'media-abc', got %q", got.MediaID)
+	}
+	if got.DecryptionKey != "deadbeef" {
+		t.Errorf("expected DecryptionKey, got %q", got.DecryptionKey)
+	}
+
+	// Not found
+	got, err = store.GetMessageByID("nonexistent")
+	if err != nil {
+		t.Fatalf("get nonexistent: %v", err)
+	}
+	if got != nil {
+		t.Errorf("expected nil for nonexistent, got %+v", got)
+	}
+}
+
+func TestMessageReactionsField(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	msg := &Message{
+		MessageID:      "m1",
+		ConversationID: "c1",
+		Body:           "Funny message",
+		TimestampMS:    1000,
+		Reactions:      `[{"emoji":"😂","count":2},{"emoji":"❤️","count":1}]`,
+	}
+	if err := store.UpsertMessage(msg); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	msgs, err := store.GetMessagesByConversation("c1", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("got %d, want 1", len(msgs))
+	}
+	if msgs[0].Reactions != `[{"emoji":"😂","count":2},{"emoji":"❤️","count":1}]` {
+		t.Errorf("reactions mismatch: %q", msgs[0].Reactions)
+	}
+}
+
+func TestMessageReplyToField(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	// Original message
+	store.UpsertMessage(&Message{
+		MessageID:      "m1",
+		ConversationID: "c1",
+		Body:           "Original message",
+		TimestampMS:    1000,
+	})
+	// Reply
+	store.UpsertMessage(&Message{
+		MessageID:      "m2",
+		ConversationID: "c1",
+		Body:           "This is a reply",
+		TimestampMS:    2000,
+		ReplyToID:      "m1",
+	})
+
+	msgs, err := store.GetMessagesByConversation("c1", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(msgs) != 2 {
+		t.Fatalf("got %d, want 2", len(msgs))
+	}
+	// Messages come DESC, so m2 first
+	if msgs[0].ReplyToID != "m1" {
+		t.Errorf("expected ReplyToID 'm1', got %q", msgs[0].ReplyToID)
+	}
+	if msgs[1].ReplyToID != "" {
+		t.Errorf("expected empty ReplyToID, got %q", msgs[1].ReplyToID)
+	}
+}
+
+func TestMediaFieldMigration(t *testing.T) {
+	// Verify that a fresh DB has media columns
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	// Insert a message with media fields - should not error
+	err = store.UpsertMessage(&Message{
+		MessageID:     "m1",
+		MediaID:       "mid",
+		MimeType:      "image/gif",
+		DecryptionKey: "key",
+	})
+	if err != nil {
+		t.Fatalf("expected media columns to exist: %v", err)
+	}
+}
+
 func TestGetMessagesNoFilters(t *testing.T) {
 	store, err := New(":memory:")
 	if err != nil {

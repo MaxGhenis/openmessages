@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog"
@@ -26,7 +28,14 @@ func RunServe(logger zerolog.Logger) error {
 		return fmt.Errorf("connect: %w", err)
 	}
 
-	// Start web server in background
+	// Backfill existing conversations and messages
+	go func() {
+		if err := a.Backfill(); err != nil {
+			logger.Warn().Err(err).Msg("Backfill failed")
+		}
+	}()
+
+	// Start web server
 	port := os.Getenv("OPENMESSAGES_PORT")
 	if port == "" {
 		port = "7007"
@@ -43,21 +52,28 @@ func RunServe(logger zerolog.Logger) error {
 		}
 	}()
 
-	// Create MCP server
+	// Create and start MCP server in background
 	s := server.NewMCPServer(
 		"openmessages",
 		"0.1.0",
 		server.WithToolCapabilities(true),
 	)
-
-	// Register tools
 	tools.Register(s, a)
 
-	// Serve MCP over stdio (blocks)
-	logger.Info().Msg("Starting MCP server on stdio")
-	if err := server.ServeStdio(s); err != nil {
-		return fmt.Errorf("serve: %w", err)
-	}
+	// Run MCP stdio in a goroutine so it doesn't kill the process on EOF
+	go func() {
+		logger.Info().Msg("Starting MCP server on stdio")
+		if err := server.ServeStdio(s); err != nil {
+			logger.Warn().Err(err).Msg("MCP stdio ended")
+		}
+	}()
+
+	// Block until signal
+	logger.Info().Msg("Listen recovered")
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
+	logger.Info().Msg("Shutting down")
 	return nil
 }
 

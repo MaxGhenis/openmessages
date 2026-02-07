@@ -26,6 +26,11 @@ func (s *Store) GetConversation(id string) (*Conversation, error) {
 	return c, nil
 }
 
+func (s *Store) UpdateConversationTimestamp(id string, ts int64) error {
+	_, err := s.db.Exec(`UPDATE conversations SET last_message_ts = ? WHERE conversation_id = ?`, ts, id)
+	return err
+}
+
 func (s *Store) ListConversations(limit int) ([]*Conversation, error) {
 	rows, err := s.db.Query(`
 		SELECT conversation_id, name, is_group, participants, last_message_ts, unread_count
