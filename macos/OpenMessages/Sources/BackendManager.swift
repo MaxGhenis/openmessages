@@ -38,15 +38,35 @@ final class BackendManager: ObservableObject {
     }
 
     /// Data directory for session, DB, etc.
+    /// Uses Application Support inside the sandbox container, which is always writable.
     var dataDir: String {
-        let dir = NSHomeDirectory() + "/.local/share/openmessages"
-        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("OpenMessages").path
+        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true, attributes: nil)
         return dir
+    }
+
+    /// Migrate session and DB from old data dir (~/.local/share/openmessages) if present.
+    private func migrateOldDataIfNeeded() {
+        let oldDir = NSHomeDirectory() + "/.local/share/openmessages"
+        let newDir = dataDir
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: oldDir + "/session.json"),
+              !fm.fileExists(atPath: newDir + "/session.json") else { return }
+        for file in ["session.json", "messages.db", "messages.db-shm", "messages.db-wal"] {
+            let src = oldDir + "/" + file
+            let dst = newDir + "/" + file
+            if fm.fileExists(atPath: src) {
+                try? fm.copyItem(atPath: src, toPath: dst)
+            }
+        }
+        logger.info("Migrated data from \(oldDir) to \(newDir)")
     }
 
     /// Whether a session file exists (i.e. phone is already paired).
     var hasSession: Bool {
-        FileManager.default.fileExists(atPath: dataDir + "/session.json")
+        migrateOldDataIfNeeded()
+        return FileManager.default.fileExists(atPath: dataDir + "/session.json")
     }
 
     var baseURL: URL {
@@ -159,16 +179,23 @@ final class BackendManager: ObservableObject {
 
                 pipe.fileHandleForReading.readabilityHandler = { handle in
                     let data = handle.availableData
-                    guard !data.isEmpty, let line = String(data: data, encoding: .utf8) else { return }
-                    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
 
-                    // The pair command outputs the QR URL
-                    if trimmed.hasPrefix("https://") || trimmed.hasPrefix("http://") {
-                        continuation.yield(.qrURL(trimmed))
-                    } else if trimmed.lowercased().contains("success") || trimmed.lowercased().contains("paired") {
-                        continuation.yield(.success)
-                    } else if !trimmed.isEmpty {
-                        continuation.yield(.log(trimmed))
+                    // Output may contain multiple lines (QR art + URL)
+                    for line in text.components(separatedBy: .newlines) {
+                        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty else { continue }
+
+                        // Extract URL from lines like "URL: https://..." or bare URLs
+                        if let range = trimmed.range(of: "https://", options: .caseInsensitive) {
+                            let url = String(trimmed[range.lowerBound...])
+                            continuation.yield(.qrURL(url))
+                        } else if trimmed.hasPrefix("http://") {
+                            continuation.yield(.qrURL(trimmed))
+                        } else if trimmed.lowercased().contains("success") || trimmed.lowercased().contains("paired") {
+                            continuation.yield(.success)
+                        }
+                        // Skip QR art and other log lines to avoid noisy status updates
                     }
                 }
 

@@ -43,6 +43,7 @@ func searchMessagesHandler(a *app.App) server.ToolHandlerFunc {
 		}
 
 		var sb strings.Builder
+		sb.WriteString(messagePreamble)
 		fmt.Fprintf(&sb, "Found %d messages matching '%s':\n\n", len(msgs), query)
 		for _, m := range msgs {
 			ts := time.UnixMilli(m.TimestampMS).Format(time.RFC3339)
@@ -57,7 +58,7 @@ func searchMessagesHandler(a *app.App) server.ToolHandlerFunc {
 			if sender == "" {
 				sender = "Unknown"
 			}
-			fmt.Fprintf(&sb, "[%s] %s %s (conv: %s): %s\n", ts, direction, sender, m.ConversationID, m.Body)
+			fmt.Fprintf(&sb, "[%s] %s %s (conv: %s): «%s»\n", ts, direction, sender, m.ConversationID, m.Body)
 		}
 		return textResult(sb.String()), nil
 	}

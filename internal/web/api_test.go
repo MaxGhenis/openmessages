@@ -26,7 +26,7 @@ func newTestServer(t *testing.T) *testServer {
 	}
 
 	logger := zerolog.Nop()
-	h := APIHandler(store, nil, logger)
+	h := APIHandler(store, nil, logger, nil)
 	srv := httptest.NewServer(h)
 
 	t.Cleanup(func() {
@@ -649,6 +649,31 @@ func TestSendMediaEndpointNoClient(t *testing.T) {
 	// Should return 405 for GET or 400/503 for POST without proper body
 	if resp.StatusCode != 400 && resp.StatusCode != 503 {
 		t.Fatalf("got status %d, want 400 or 503", resp.StatusCode)
+	}
+}
+
+func TestMediaEndpointWithMimeTypeButNoMediaID(t *testing.T) {
+	ts := newTestServer(t)
+
+	// Message has MimeType (from backfill) but no MediaID (expired)
+	// Historical media references are ephemeral and can't be re-fetched
+	ts.store.UpsertMessage(&db.Message{
+		MessageID:      "m-media-no-id",
+		ConversationID: "c1",
+		MimeType:       "image/png",
+		MediaID:        "", // empty — media reference expired
+		TimestampMS:    1000,
+	})
+
+	resp, err := http.Get(ts.server.URL + "/api/media/m-media-no-id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// No MediaID means we can't download — return 404
+	if resp.StatusCode != 404 {
+		t.Fatalf("got status %d, want 404 (no media ID available)", resp.StatusCode)
 	}
 }
 

@@ -53,13 +53,7 @@ struct PairingView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
-            if pairingSucceeded {
-                Button("Continue") {
-                    backend.start()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-            } else if !isPairing {
+            if !isPairing && !pairingSucceeded {
                 Button("Start pairing") {
                     startPairing()
                 }
@@ -91,6 +85,7 @@ struct PairingView: View {
                     pairingSucceeded = true
                     isPairing = false
                     statusText = "Paired successfully!"
+                    backend.start()
                 case .failed(let msg):
                     isPairing = false
                     statusText = "Pairing failed: \(msg)"

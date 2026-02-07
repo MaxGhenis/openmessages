@@ -25,9 +25,12 @@ var staticFS embed.FS
 
 // APIHandler creates the HTTP handler with JSON API routes and static file serving.
 // The client may be nil (disconnected state).
+// mcpHandler is an optional http.Handler for the MCP SSE endpoint (mounted at /mcp/).
 // onDeepBackfill is an optional callback triggered by POST /api/backfill.
-func APIHandler(store *db.Store, cli *client.Client, logger zerolog.Logger, onDeepBackfill ...func()) http.Handler {
+func APIHandler(store *db.Store, cli *client.Client, logger zerolog.Logger, mcpHandler http.Handler, onDeepBackfill ...func()) http.Handler {
 	mux := http.NewServeMux()
+
+	_ = mcpHandler // used in the return wrapper below
 
 	mux.HandleFunc("/api/conversations", func(w http.ResponseWriter, r *http.Request) {
 		limit := queryInt(r, "limit", 50)
@@ -354,6 +357,96 @@ func APIHandler(store *db.Store, cli *client.Client, logger zerolog.Logger, onDe
 		})
 	})
 
+	mux.HandleFunc("/api/new-conversation", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			httpError(w, "method not allowed", 405)
+			return
+		}
+		var req struct {
+			PhoneNumber string `json:"phone_number"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			httpError(w, "invalid JSON: "+err.Error(), 400)
+			return
+		}
+		if req.PhoneNumber == "" {
+			httpError(w, "phone_number is required", 400)
+			return
+		}
+		if cli == nil {
+			httpError(w, "not connected to Google Messages", 503)
+			return
+		}
+
+		convResp, err := cli.GM.GetOrCreateConversation(&gmproto.GetOrCreateConversationRequest{
+			Numbers: []*gmproto.ContactNumber{
+				{
+					MysteriousInt: 7,
+					Number:        req.PhoneNumber,
+					Number2:       req.PhoneNumber,
+				},
+			},
+		})
+		if err != nil {
+			httpError(w, "failed to get/create conversation: "+err.Error(), 502)
+			return
+		}
+		conv := convResp.GetConversation()
+		if conv == nil {
+			httpError(w, "no conversation returned", 502)
+			return
+		}
+
+		convoID := conv.GetConversationID()
+		name := req.PhoneNumber
+		// Try to get a name from participants
+		for _, p := range conv.GetParticipants() {
+			if !p.GetIsMe() {
+				if fn := p.GetFormattedNumber(); fn != "" {
+					name = fn
+				}
+				if cn := p.GetFullName(); cn != "" {
+					name = cn
+				}
+			}
+		}
+
+		// Upsert into local DB so it shows in the sidebar
+		store.UpsertConversation(&db.Conversation{
+			ConversationID: convoID,
+			Name:           name,
+			LastMessageTS:  time.Now().UnixMilli(),
+		})
+
+		writeJSON(w, map[string]any{
+			"conversation_id": convoID,
+			"name":            name,
+		})
+	})
+
+	mux.HandleFunc("/api/mark-read", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			httpError(w, "method not allowed", 405)
+			return
+		}
+		var req struct {
+			ConversationID string `json:"conversation_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			httpError(w, "invalid JSON: "+err.Error(), 400)
+			return
+		}
+		if req.ConversationID == "" {
+			httpError(w, "conversation_id is required", 400)
+			return
+		}
+		if err := store.MarkConversationRead(req.ConversationID); err != nil {
+			httpError(w, "mark read: "+err.Error(), 500)
+			return
+		}
+		writeJSON(w, map[string]string{"status": "ok"})
+	})
+
 	mux.HandleFunc("/api/backfill", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			httpError(w, "method not allowed", 405)
@@ -379,7 +472,19 @@ func APIHandler(store *db.Store, cli *client.Client, logger zerolog.Logger, onDe
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create static sub-filesystem")
 	}
-	mux.Handle("/", http.FileServer(http.FS(staticContent)))
+	staticHandler := http.FileServer(http.FS(staticContent))
+	mux.Handle("/", staticHandler)
+
+	// Wrap the mux to intercept /mcp/ requests before the mux's catch-all
+	if mcpHandler != nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/mcp/") {
+				mcpHandler.ServeHTTP(w, r)
+				return
+			}
+			mux.ServeHTTP(w, r)
+		})
+	}
 
 	return mux
 }

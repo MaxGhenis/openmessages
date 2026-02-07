@@ -54,6 +54,27 @@ chmod +x "$APP_BUNDLE/Contents/Resources/openmessages"
 # Copy Info.plist
 cp "$SCRIPT_DIR/OpenMessages/Sources/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 
+# Generate and copy app icon
+ICON_SRC="$SCRIPT_DIR/OpenMessages/Sources/Assets.xcassets/AppIcon.appiconset"
+if [ -f "$ICON_SRC/icon_512x512.png" ]; then
+    ICONSET="$BUILD_DIR/AppIcon.iconset"
+    rm -rf "$ICONSET"
+    mkdir -p "$ICONSET"
+    sips -z 16 16     "$ICON_SRC/icon_512x512.png" --out "$ICONSET/icon_16x16.png"      >/dev/null 2>&1
+    sips -z 32 32     "$ICON_SRC/icon_512x512.png" --out "$ICONSET/icon_16x16@2x.png"   >/dev/null 2>&1
+    sips -z 32 32     "$ICON_SRC/icon_512x512.png" --out "$ICONSET/icon_32x32.png"      >/dev/null 2>&1
+    sips -z 64 64     "$ICON_SRC/icon_512x512.png" --out "$ICONSET/icon_32x32@2x.png"   >/dev/null 2>&1
+    sips -z 128 128   "$ICON_SRC/icon_512x512.png" --out "$ICONSET/icon_128x128.png"    >/dev/null 2>&1
+    sips -z 256 256   "$ICON_SRC/icon_512x512.png" --out "$ICONSET/icon_128x128@2x.png" >/dev/null 2>&1
+    sips -z 256 256   "$ICON_SRC/icon_512x512.png" --out "$ICONSET/icon_256x256.png"    >/dev/null 2>&1
+    cp "$ICON_SRC/icon_512x512.png"    "$ICONSET/icon_256x256@2x.png"
+    cp "$ICON_SRC/icon_512x512.png"    "$ICONSET/icon_512x512.png"
+    cp "$ICON_SRC/icon_512x512@2x.png" "$ICONSET/icon_512x512@2x.png"
+    iconutil -c icns "$ICONSET" -o "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+    rm -rf "$ICONSET"
+    echo "   App icon: $(du -h "$APP_BUNDLE/Contents/Resources/AppIcon.icns" | cut -f1)"
+fi
+
 # Create PkgInfo
 echo -n "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
@@ -89,26 +110,19 @@ hdiutil create -volname "$APP_NAME" -srcfolder "$APP_BUNDLE" -ov -format UDZO "$
 echo "   DMG: $(du -h "$DMG_PATH" | cut -f1)"
 
 # ── Notarize ──
-if [ -n "$SIGN_IDENTITY" ] && [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APP_PASSWORD:-}" ]; then
+NOTARY_PROFILE="${NOTARY_KEYCHAIN_PROFILE:-OpenMessages}"
+if [ -n "$SIGN_IDENTITY" ]; then
     echo "==> Submitting for notarization..."
     xcrun notarytool submit "$DMG_PATH" \
-        --apple-id "$APPLE_ID" \
-        --team-id "$APPLE_TEAM_ID" \
-        --password "$APP_PASSWORD" \
+        --keychain-profile "$NOTARY_PROFILE" \
         --wait
 
     echo "==> Stapling notarization ticket..."
     xcrun stapler staple "$DMG_PATH"
     echo "   Notarized and stapled!"
 else
-    if [ -n "$SIGN_IDENTITY" ]; then
-        echo ""
-        echo "   Signed but NOT notarized. To notarize, also set:"
-        echo "     APPLE_ID, APPLE_TEAM_ID, APP_PASSWORD"
-    else
-        echo ""
-        echo "   To sign + notarize, set: DEVELOPER_ID, APPLE_ID, APPLE_TEAM_ID, APP_PASSWORD"
-    fi
+    echo ""
+    echo "   To sign + notarize, set: DEVELOPER_ID"
 fi
 
 echo ""

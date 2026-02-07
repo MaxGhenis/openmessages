@@ -442,7 +442,9 @@ footer a:hover { color: var(--accent); }
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#setup">Setup</a>
+    <a href="#ai">AI integration</a>
     <a href="https://github.com/maxghenis/openmessages" target="_blank">GitHub</a>
+    <a href="https://github.com/sponsors/MaxGhenis" target="_blank">Sponsor</a>
     <a href="https://github.com/MaxGhenis/openmessages/releases/latest/download/OpenMessages.dmg" class="nav-cta">Download</a>
   </div>
 </nav>
@@ -502,8 +504,8 @@ footer a:hover { color: var(--accent); }
       <div class="feature-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       </div>
-      <h3>MCP tools</h3>
-      <p>Seven structured tools for AI assistants via Model Context Protocol. Search messages, send texts, list conversations — all from Claude Code.</p>
+      <h3>MCP tools + Claude Code plugin</h3>
+      <p>Seven structured tools for AI assistants via Model Context Protocol. Built-in SSE server, plus a Claude Code plugin with <code>/messages</code> command.</p>
     </div>
 
     <div class="feature-card">
@@ -535,7 +537,7 @@ footer a:hover { color: var(--accent); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
       </div>
       <h3>Open source</h3>
-      <p>MIT licensed. Swift + Go, fully tested. Built on the battle-tested mautrix/gmessages library for the Google Messages protocol.</p>
+      <p>Apache 2.0 licensed. Swift + Go, fully tested. Built on the battle-tested mautrix/gmessages library for the Google Messages protocol.</p>
     </div>
   </div>
 </section>
@@ -569,15 +571,71 @@ footer a:hover { color: var(--accent); }
     <div class="step">
       <div class="step-num">4</div>
       <div>
-        <h3>Add AI integration</h3>
-        <p>Add to <code>~/.mcp.json</code> for Claude Code:</p>
-        <pre style="background:var(--bg-elevated);padding:12px 16px;border-radius:8px;font-size:12px;margin-top:8px;overflow-x:auto;border:1px solid var(--border)"><code>{
-  "mcpServers": {
-    "openmessages": {
-      "command": "/Applications/OpenMessages.app/Contents/Resources/openmessages",
-      "args": ["serve"]
-    }
-  }
+        <h3>Connect to AI</h3>
+        <p>The app runs an MCP server automatically on port 7007. Add it to Claude Code:</p>
+        <pre style="background:var(--bg-elevated);padding:12px 16px;border-radius:8px;font-size:12px;margin-top:8px;overflow-x:auto;border:1px solid var(--border)"><code>claude mcp add -s user --transport sse openmessages http://localhost:7007/mcp/sse</code></pre>
+        <p style="margin-top:8px">Or install the <a href="#ai" style="color:var(--accent)">Claude Code plugin</a> for the <code>/messages</code> slash command.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how-it-works" id="ai" style="padding-top:40px">
+  <div class="section-label">AI integration</div>
+  <div class="section-title">Let your AI read and send texts</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num" style="font-family:var(--font-sans);font-size:13px">MCP</div>
+      <div>
+        <h3>Model Context Protocol server</h3>
+        <p>OpenMessages runs an SSE-based MCP server at <code>localhost:7007/mcp/sse</code> whenever the app is open. Any MCP-compatible client (Claude Code, Cursor, etc.) can connect.</p>
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+            <div style="font-size:13px;color:var(--accent);font-family:var(--font-serif)">list_conversations</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Recent chats with unread counts</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+            <div style="font-size:13px;color:var(--accent);font-family:var(--font-serif)">get_messages</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Messages in a conversation</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+            <div style="font-size:13px;color:var(--accent);font-family:var(--font-serif)">search_messages</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Full-text search across all texts</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+            <div style="font-size:13px;color:var(--accent);font-family:var(--font-serif)">send_message</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Send SMS/RCS to any number</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+            <div style="font-size:13px;color:var(--accent);font-family:var(--font-serif)">list_contacts</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Known contacts from history</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+            <div style="font-size:13px;color:var(--accent);font-family:var(--font-serif)">get_conversation</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Single conversation details</div>
+          </div>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:10px 14px;grid-column:span 2">
+            <div style="font-size:13px;color:var(--accent);font-family:var(--font-serif)">get_status</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Connection status and paired phone info</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="font-family:var(--font-sans);font-size:10px;letter-spacing:-0.5px">Plugin</div>
+      <div>
+        <h3>Claude Code plugin</h3>
+        <p>Install the plugin for a <code>/messages</code> slash command that gives Claude context about the MCP tools and best practices for handling texts.</p>
+        <pre style="background:var(--bg-elevated);padding:12px 16px;border-radius:8px;font-size:12px;margin-top:8px;overflow-x:auto;border:1px solid var(--border)"><code># In your Claude Code settings, add the plugin source:
+"pluginSources": {
+  "openmessages": "/path/to/openmessages/.claude-plugin"
+}
+
+# Then enable it:
+"enabledPlugins": {
+  "openmessages@openmessages": true
 }</code></pre>
       </div>
     </div>
@@ -585,8 +643,11 @@ footer a:hover { color: var(--accent); }
 </section>
 
 <footer>
-  <span>Created by <a href="https://maxghenis.com" target="_blank" style="color:var(--accent)">Max Ghenis</a> &middot; Open source under MIT</span>
-  <a href="https://github.com/maxghenis/openmessages" target="_blank">GitHub</a>
+  <span>Created by <a href="https://maxghenis.com" target="_blank" style="color:var(--accent)">Max Ghenis</a> &middot; Open source under Apache 2.0</span>
+  <div style="display:flex;gap:20px">
+    <a href="https://github.com/sponsors/MaxGhenis" target="_blank">Sponsor</a>
+    <a href="https://github.com/maxghenis/openmessages" target="_blank">GitHub</a>
+  </div>
 </footer>
 
 </body>

@@ -68,21 +68,24 @@ func ExtractMessageBody(msg *gmproto.Message) string {
 
 // MediaInfo holds extracted media metadata from a protobuf Message.
 type MediaInfo struct {
-	MediaID       string
-	MimeType      string
-	MediaName     string
-	DecryptionKey []byte
-	Size          int64
+	MediaID                 string
+	MimeType                string
+	MediaName               string
+	DecryptionKey           []byte
+	Size                    int64
+	ThumbnailMediaID        string
+	ThumbnailDecryptionKey  []byte
+	InlineData              []byte // Inline thumbnail bytes from mediaData field
 }
 
 // ExtractMediaInfo extracts media content from a protobuf Message.
 // Returns nil if the message has no media attachment.
+// Falls back to thumbnail or inline data when full-size MediaID is unavailable.
 func ExtractMediaInfo(msg *gmproto.Message) *MediaInfo {
 	for _, info := range msg.GetMessageInfo() {
 		if mc := info.GetMediaContent(); mc != nil {
 			mime := mc.GetMimeType()
 			if mime == "" {
-				// Derive from format enum
 				switch {
 				case mc.GetFormat() >= 1 && mc.GetFormat() <= 7:
 					mime = "image/jpeg"
@@ -90,13 +93,25 @@ func ExtractMediaInfo(msg *gmproto.Message) *MediaInfo {
 					mime = "application/octet-stream"
 				}
 			}
-			return &MediaInfo{
-				MediaID:       mc.GetMediaID(),
-				MimeType:      mime,
-				MediaName:     mc.GetMediaName(),
-				DecryptionKey: mc.GetDecryptionKey(),
-				Size:          mc.GetSize(),
+
+			mi := &MediaInfo{
+				MediaID:                mc.GetMediaID(),
+				MimeType:              mime,
+				MediaName:             mc.GetMediaName(),
+				DecryptionKey:         mc.GetDecryptionKey(),
+				Size:                  mc.GetSize(),
+				ThumbnailMediaID:      mc.GetThumbnailMediaID(),
+				ThumbnailDecryptionKey: mc.GetThumbnailDecryptionKey(),
+				InlineData:            mc.GetMediaData(),
 			}
+
+			// If no full-size MediaID, fall back to thumbnail
+			if mi.MediaID == "" && mi.ThumbnailMediaID != "" {
+				mi.MediaID = mi.ThumbnailMediaID
+				mi.DecryptionKey = mi.ThumbnailDecryptionKey
+			}
+
+			return mi
 		}
 	}
 	return nil

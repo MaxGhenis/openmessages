@@ -51,6 +51,7 @@ func getConversationHandler(a *app.App) server.ToolHandlerFunc {
 			sb.WriteString("---\n")
 		}
 
+		sb.WriteString(messagePreamble)
 		for _, m := range msgs {
 			ts := time.UnixMilli(m.TimestampMS).Format(time.RFC3339)
 			direction := "←"
@@ -64,7 +65,7 @@ func getConversationHandler(a *app.App) server.ToolHandlerFunc {
 			if sender == "" {
 				sender = "Unknown"
 			}
-			fmt.Fprintf(&sb, "[%s] %s %s: %s\n", ts, direction, sender, m.Body)
+			fmt.Fprintf(&sb, "[%s] %s %s: «%s»\n", ts, direction, sender, m.Body)
 		}
 		return textResult(sb.String()), nil
 	}

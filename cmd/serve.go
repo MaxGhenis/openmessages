@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mark3labs/mcp-go/server"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog"
 
 	"github.com/maxghenis/openmessages/internal/app"
@@ -40,36 +40,35 @@ func RunServe(logger zerolog.Logger) error {
 	if port == "" {
 		port = "7007"
 	}
-	httpHandler := web.APIHandler(a.Store, a.Client, logger, a.DeepBackfill)
+
+	// Create MCP server
+	mcpSrv := mcpserver.NewMCPServer(
+		"openmessages",
+		"0.1.0",
+		mcpserver.WithToolCapabilities(true),
+	)
+	tools.Register(mcpSrv, a)
+
+	// Create SSE transport for MCP, mounted at /mcp/
+	sseSrv := mcpserver.NewSSEServer(mcpSrv,
+		mcpserver.WithBaseURL(fmt.Sprintf("http://localhost:%s", port)),
+		mcpserver.WithStaticBasePath("/mcp"),
+	)
+
+	httpHandler := web.APIHandler(a.Store, a.Client, logger, sseSrv, a.DeepBackfill)
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		return fmt.Errorf("listen on port %s: %w", port, err)
 	}
 	go func() {
 		logger.Info().Str("port", port).Msg("Web UI available at http://localhost:" + port)
+		logger.Info().Str("port", port).Msg("MCP SSE available at http://localhost:" + port + "/mcp/sse")
 		if err := http.Serve(ln, httpHandler); err != nil {
 			logger.Error().Err(err).Msg("HTTP server error")
 		}
 	}()
 
-	// Create and start MCP server in background
-	s := server.NewMCPServer(
-		"openmessages",
-		"0.1.0",
-		server.WithToolCapabilities(true),
-	)
-	tools.Register(s, a)
-
-	// Run MCP stdio in a goroutine so it doesn't kill the process on EOF
-	go func() {
-		logger.Info().Msg("Starting MCP server on stdio")
-		if err := server.ServeStdio(s); err != nil {
-			logger.Warn().Err(err).Msg("MCP stdio ended")
-		}
-	}()
-
 	// Block until signal
-	logger.Info().Msg("Listen recovered")
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh
