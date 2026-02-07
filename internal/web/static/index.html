@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenMessages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #111111;
+  --bg-surface: #1a1a1a;
+  --bg-elevated: #242424;
+  --bg-hover: #2e2e2e;
+  --text-primary: #faf6f1;
+  --text-secondary: #a09890;
+  --text-muted: #6b6560;
+  --accent: #e8a44a;
+  --accent-dim: rgba(232, 164, 74, 0.15);
+  --accent-glow: rgba(232, 164, 74, 0.08);
+  --cream: #faf6f1;
+  --cream-soft: rgba(250, 246, 241, 0.06);
+  --sent-bg: #2a2520;
+  --received-bg: #1e1e1e;
+  --border: rgba(250, 246, 241, 0.06);
+  --border-accent: rgba(232, 164, 74, 0.25);
+  --radius-sm: 4px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, sans-serif;
+  --shadow-soft: 0 2px 20px rgba(0,0,0,0.3);
+  --shadow-glow: 0 0 40px rgba(232, 164, 74, 0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ─── Layout ─── */
+.app {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  height: 100vh;
+}
+
+/* ─── Left Rail: Conversation List ─── */
+.sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-header h1 {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+.sidebar-header h1 span {
+  color: var(--accent);
+}
+
+.search-box {
+  margin: 16px 20px 12px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 16px 10px 40px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-box input::placeholder { color: var(--text-muted); }
+
+.search-box input:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.search-box svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  width: 16px;
+  height: 16px;
+}
+
+.conversation-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+.conversation-list::-webkit-scrollbar { width: 4px; }
+.conversation-list::-webkit-scrollbar-track { background: transparent; }
+.conversation-list::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 2px;
+}
+
+.convo-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.convo-item:hover { background: var(--bg-hover); }
+
+.convo-item.active {
+  background: var(--accent-dim);
+}
+
+.convo-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 28px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.convo-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--accent);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.convo-item.active .convo-avatar {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.convo-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.convo-name {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.convo-preview {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.convo-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.convo-unread {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+}
+
+/* ─── Right Pane: Messages ─── */
+.chat-pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-deep);
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.chat-header-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+}
+
+.chat-header-name {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.chat-header-status {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.messages-area::-webkit-scrollbar { width: 4px; }
+.messages-area::-webkit-scrollbar-track { background: transparent; }
+.messages-area::-webkit-scrollbar-thumb {
+  background: rgba(250, 246, 241, 0.1);
+  border-radius: 2px;
+}
+
+.msg {
+  max-width: 520px;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+  font-size: 14.5px;
+  line-height: 1.55;
+  animation: msgIn 0.25s ease-out;
+  position: relative;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg.sent {
+  align-self: flex-end;
+  background: var(--sent-bg);
+  color: var(--cream);
+  border-bottom-right-radius: var(--radius-sm);
+  border: 1px solid rgba(232, 164, 74, 0.12);
+}
+
+.msg.received {
+  align-self: flex-start;
+  background: var(--received-bg);
+  color: var(--text-primary);
+  border-bottom-left-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.msg-sender {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 3px;
+  font-family: var(--font-sans);
+}
+
+.msg-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: right;
+}
+
+.msg.sent .msg-time { color: rgba(250, 246, 241, 0.35); }
+
+.date-divider {
+  text-align: center;
+  padding: 16px 0 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ─── Compose Bar ─── */
+.compose-bar {
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.compose-input {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  line-height: 1.5;
+  outline: none;
+  resize: none;
+  min-height: 44px;
+  max-height: 160px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.compose-input::placeholder { color: var(--text-muted); }
+
+.compose-input:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.send-btn:hover { transform: scale(1.06); }
+.send-btn:active { transform: scale(0.95); }
+.send-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+
+.send-btn svg {
+  width: 20px;
+  height: 20px;
+  color: var(--bg-deep);
+}
+
+/* ─── Empty State ─── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.empty-state-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+
+.empty-state h2 {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 280px;
+  text-align: center;
+}
+
+/* ─── Connection Banner ─── */
+.connection-banner {
+  padding: 8px 20px;
+  background: var(--accent-dim);
+  border-bottom: 1px solid var(--border-accent);
+  font-size: 13px;
+  color: var(--accent);
+  text-align: center;
+  display: none;
+}
+
+.connection-banner.disconnected {
+  display: block;
+  background: rgba(220, 80, 60, 0.12);
+  border-color: rgba(220, 80, 60, 0.25);
+  color: #dc503c;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .sidebar.mobile-open { display: flex; position: fixed; inset: 0; z-index: 10; }
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- Left Rail -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>Open<span>Messages</span></h1>
+    </div>
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Search messages..." autocomplete="off">
+    </div>
+    <div class="conversation-list" id="conversation-list"></div>
+  </div>
+
+  <!-- Right Pane -->
+  <div class="chat-pane" id="chat-pane">
+    <div class="connection-banner" id="connection-banner">
+      Not connected to Google Messages
+    </div>
+
+    <!-- Empty state (shown when no conversation selected) -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h2>Your messages</h2>
+      <p>Select a conversation to start messaging, or wait for new messages to arrive.</p>
+    </div>
+
+    <!-- Chat view (hidden until conversation selected) -->
+    <div class="chat-header" id="chat-header" style="display:none">
+      <div class="chat-header-avatar" id="chat-header-avatar"></div>
+      <div>
+        <div class="chat-header-name" id="chat-header-name"></div>
+        <div class="chat-header-status" id="chat-header-status"></div>
+      </div>
+    </div>
+    <div class="messages-area" id="messages-area" style="display:none"></div>
+    <div class="compose-bar" id="compose-bar" style="display:none">
+      <textarea class="compose-input" id="compose-input" placeholder="Write a message..." rows="1"></textarea>
+      <button class="send-btn" id="send-btn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const API = '';
+  let activeConvoId = null;
+  let conversations = [];
+  let pollTimer = null;
+
+  // ─── DOM refs ───
+  const $convoList = document.getElementById('conversation-list');
+  const $emptyState = document.getElementById('empty-state');
+  const $chatHeader = document.getElementById('chat-header');
+  const $chatHeaderAvatar = document.getElementById('chat-header-avatar');
+  const $chatHeaderName = document.getElementById('chat-header-name');
+  const $chatHeaderStatus = document.getElementById('chat-header-status');
+  const $messagesArea = document.getElementById('messages-area');
+  const $composeBar = document.getElementById('compose-bar');
+  const $composeInput = document.getElementById('compose-input');
+  const $sendBtn = document.getElementById('send-btn');
+  const $searchInput = document.getElementById('search-input');
+  const $connectionBanner = document.getElementById('connection-banner');
+
+  // ─── Utilities ───
+  function initials(name) {
+    if (!name) return '?';
+    return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  function formatTime(ms) {
+    if (!ms) return '';
+    const d = new Date(ms);
+    const now = new Date();
+    const diffDays = Math.floor((now - d) / 86400000);
+    if (diffDays === 0) {
+      return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return d.toLocaleDateString([], { weekday: 'short' });
+    }
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  function formatMessageTime(ms) {
+    if (!ms) return '';
+    return new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function isSameDay(ms1, ms2) {
+    const a = new Date(ms1), b = new Date(ms2);
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth() === b.getMonth() &&
+           a.getDate() === b.getDate();
+  }
+
+  function formatDateDivider(ms) {
+    const d = new Date(ms);
+    const now = new Date();
+    const diffDays = Math.floor((now - d) / 86400000);
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  // ─── API calls ───
+  async function fetchJSON(url) {
+    const r = await fetch(API + url);
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    return r.json();
+  }
+
+  async function postJSON(url, body) {
+    const r = await fetch(API + url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return r.json();
+  }
+
+  // ─── Render Conversations ───
+  function renderConversations(convos) {
+    conversations = convos;
+    $convoList.innerHTML = '';
+    if (!convos.length) {
+      $convoList.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px">No conversations yet</div>';
+      return;
+    }
+    convos.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'convo-item' + (c.ConversationID === activeConvoId ? ' active' : '');
+      el.dataset.id = c.ConversationID;
+      el.innerHTML = `
+        <div class="convo-avatar">${initials(c.Name)}</div>
+        <div class="convo-meta">
+          <div class="convo-name">${escapeHtml(c.Name || 'Unknown')}</div>
+          <div class="convo-preview">&nbsp;</div>
+        </div>
+        <div class="convo-time">${formatTime(c.LastMessageTS)}</div>
+        ${c.UnreadCount > 0 ? '<div class="convo-unread"></div>' : ''}
+      `;
+      el.addEventListener('click', () => selectConversation(c));
+      $convoList.appendChild(el);
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ─── Select Conversation ───
+  async function selectConversation(convo) {
+    activeConvoId = convo.ConversationID;
+
+    // Update sidebar active state
+    document.querySelectorAll('.convo-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.id === activeConvoId);
+    });
+
+    // Show chat UI
+    $emptyState.style.display = 'none';
+    $chatHeader.style.display = 'flex';
+    $messagesArea.style.display = 'flex';
+    $composeBar.style.display = 'flex';
+
+    $chatHeaderAvatar.textContent = initials(convo.Name);
+    $chatHeaderName.textContent = convo.Name || 'Unknown';
+    $chatHeaderStatus.textContent = convo.IsGroup ? 'Group' : 'SMS';
+
+    await loadMessages(convo.ConversationID);
+
+    // Start polling for new messages
+    clearInterval(pollTimer);
+    pollTimer = setInterval(() => loadMessages(activeConvoId), 3000);
+  }
+
+  // ─── Load Messages ───
+  let lastMsgCount = 0;
+
+  async function loadMessages(convoId) {
+    try {
+      const msgs = await fetchJSON(`/api/conversations/${convoId}/messages?limit=200`);
+      // Reverse: API returns DESC, we want oldest first
+      msgs.reverse();
+
+      if (msgs.length === lastMsgCount && convoId === activeConvoId) return;
+      lastMsgCount = msgs.length;
+
+      const wasAtBottom = $messagesArea.scrollHeight - $messagesArea.scrollTop - $messagesArea.clientHeight < 60;
+
+      $messagesArea.innerHTML = '';
+      let lastDate = 0;
+
+      msgs.forEach(m => {
+        // Date divider
+        if (!isSameDay(m.TimestampMS, lastDate)) {
+          const divider = document.createElement('div');
+          divider.className = 'date-divider';
+          divider.textContent = formatDateDivider(m.TimestampMS);
+          $messagesArea.appendChild(divider);
+          lastDate = m.TimestampMS;
+        }
+
+        const el = document.createElement('div');
+        el.className = 'msg ' + (m.IsFromMe ? 'sent' : 'received');
+
+        let html = '';
+        if (!m.IsFromMe && m.SenderName) {
+          html += `<div class="msg-sender">${escapeHtml(m.SenderName)}</div>`;
+        }
+        html += `<div class="msg-body">${escapeHtml(m.Body)}</div>`;
+        html += `<div class="msg-time">${formatMessageTime(m.TimestampMS)}</div>`;
+        el.innerHTML = html;
+        $messagesArea.appendChild(el);
+      });
+
+      if (wasAtBottom || msgs.length !== lastMsgCount) {
+        $messagesArea.scrollTop = $messagesArea.scrollHeight;
+      }
+    } catch (err) {
+      console.error('Failed to load messages:', err);
+    }
+  }
+
+  // ─── Send Message ───
+  async function sendMessage() {
+    const text = $composeInput.value.trim();
+    if (!text || !activeConvoId) return;
+
+    $composeInput.value = '';
+    $sendBtn.disabled = true;
+    autoResize();
+
+    try {
+      const convo = conversations.find(c => c.ConversationID === activeConvoId);
+      // We need a phone number. For now, use the conversation name as a hint.
+      // The real implementation would resolve conversation → participant number.
+      await postJSON('/api/send', {
+        phone_number: convo?.Name || '',
+        message: text,
+        conversation_id: activeConvoId,
+      });
+      // Reload messages to see the sent one
+      await loadMessages(activeConvoId);
+    } catch (err) {
+      console.error('Failed to send:', err);
+    }
+  }
+
+  // ─── Compose Input ───
+  function autoResize() {
+    $composeInput.style.height = 'auto';
+    $composeInput.style.height = Math.min($composeInput.scrollHeight, 160) + 'px';
+    $sendBtn.disabled = !$composeInput.value.trim();
+  }
+
+  $composeInput.addEventListener('input', autoResize);
+  $composeInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  $sendBtn.addEventListener('click', sendMessage);
+
+  // ─── Search ───
+  let searchTimeout;
+  $searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    const q = $searchInput.value.trim();
+    if (!q) {
+      loadConversations();
+      return;
+    }
+    searchTimeout = setTimeout(async () => {
+      try {
+        const results = await fetchJSON(`/api/search?q=${encodeURIComponent(q)}&limit=20`);
+        // Group search results by conversation
+        const byConvo = {};
+        results.forEach(m => {
+          if (!byConvo[m.ConversationID]) {
+            byConvo[m.ConversationID] = { name: m.SenderName, body: m.Body, ts: m.TimestampMS, id: m.ConversationID };
+          }
+        });
+        const fakeConvos = Object.values(byConvo).map(c => ({
+          ConversationID: c.id,
+          Name: c.name || 'Unknown',
+          LastMessageTS: c.ts,
+        }));
+        renderConversations(fakeConvos);
+      } catch (err) {
+        console.error('Search failed:', err);
+      }
+    }, 300);
+  });
+
+  // ─── Status Check ───
+  async function checkStatus() {
+    try {
+      const status = await fetchJSON('/api/status');
+      if (status.connected) {
+        $connectionBanner.className = 'connection-banner';
+      } else {
+        $connectionBanner.className = 'connection-banner disconnected';
+      }
+    } catch {
+      $connectionBanner.className = 'connection-banner disconnected';
+    }
+  }
+
+  // ─── Load Conversations ───
+  async function loadConversations() {
+    try {
+      const convos = await fetchJSON('/api/conversations?limit=50');
+      renderConversations(convos);
+    } catch (err) {
+      console.error('Failed to load conversations:', err);
+    }
+  }
+
+  // ─── Init ───
+  loadConversations();
+  checkStatus();
+  setInterval(checkStatus, 10000);
+  setInterval(loadConversations, 5000);
+})();
+</script>
+</body>
+</html>

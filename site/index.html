@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenMessages — Open-source Google Messages client with AI tools</title>
+<meta name="description" content="A messaging client for SMS and RCS that gives AI assistants full read/write access to your texts. Open source, runs locally, no cloud.">
+<meta property="og:title" content="OpenMessages">
+<meta property="og:description" content="Open-source Google Messages client with AI tools. SMS + RCS from your desktop, with MCP support for Claude and other AI assistants.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://openmessages.ai">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #0c0c0c;
+  --bg-surface: #141414;
+  --bg-elevated: #1e1e1e;
+  --text-primary: #faf6f1;
+  --text-secondary: #a09890;
+  --text-muted: #5a5550;
+  --accent: #e8a44a;
+  --accent-dim: rgba(232, 164, 74, 0.12);
+  --accent-glow: rgba(232, 164, 74, 0.06);
+  --border: rgba(250, 246, 241, 0.06);
+  --border-accent: rgba(232, 164, 74, 0.2);
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── Grain overlay ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ─── Ambient glow ─── */
+.glow-top {
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: radial-gradient(ellipse, rgba(232, 164, 74, 0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ─── Nav ─── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(12, 12, 12, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.nav-logo span { color: var(--accent); }
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text-primary); }
+
+.nav-cta {
+  background: var(--accent) !important;
+  color: var(--bg-deep) !important;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: transform 0.15s, opacity 0.15s !important;
+}
+
+.nav-cta:hover { transform: scale(1.03); opacity: 0.9; }
+
+/* ─── Hero ─── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 40px 80px;
+  text-align: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  border-radius: 100px;
+  padding: 6px 16px 6px 10px;
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 40px;
+  animation: fadeUp 0.6s ease-out;
+}
+
+.hero-badge svg {
+  width: 16px;
+  height: 16px;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(48px, 8vw, 88px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  max-width: 800px;
+  animation: fadeUp 0.6s ease-out 0.1s both;
+}
+
+h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.hero-sub {
+  margin-top: 28px;
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  max-width: 520px;
+  animation: fadeUp 0.6s ease-out 0.2s both;
+}
+
+.hero-actions {
+  margin-top: 48px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  animation: fadeUp 0.6s ease-out 0.3s both;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: var(--bg-deep);
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform 0.15s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover { transform: scale(1.03); }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-accent);
+  background: rgba(232, 164, 74, 0.06);
+}
+
+.btn-secondary svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ─── App Preview ─── */
+.preview {
+  margin-top: 80px;
+  width: 100%;
+  max-width: 900px;
+  animation: fadeUp 0.8s ease-out 0.4s both;
+}
+
+.preview-window {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 80px rgba(232, 164, 74, 0.04);
+}
+
+.preview-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.preview-dot:first-child { background: #ff5f57; border-color: #e0443e; }
+.preview-dot:nth-child(2) { background: #ffbd2e; border-color: #dea123; }
+.preview-dot:nth-child(3) { background: #28c840; border-color: #1aab29; }
+
+.preview-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 420px;
+}
+
+.preview-sidebar {
+  border-right: 1px solid var(--border);
+  padding: 16px 12px;
+}
+
+.preview-convo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.preview-convo.active {
+  background: var(--accent-dim);
+}
+
+.preview-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--accent);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.preview-convo-name {
+  font-family: var(--font-serif);
+  font-size: 14px;
+}
+
+.preview-convo-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.preview-messages {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.preview-msg {
+  padding: 8px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.preview-msg.received {
+  align-self: flex-start;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+
+.preview-msg.sent {
+  align-self: flex-end;
+  background: rgba(232, 164, 74, 0.12);
+  border: 1px solid rgba(232, 164, 74, 0.15);
+  border-bottom-right-radius: 4px;
+}
+
+.preview-msg .label {
+  font-size: 10px;
+  color: var(--accent);
+  margin-bottom: 2px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+/* ─── Features ─── */
+.features {
+  padding: 120px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 60px;
+}
+
+.feature-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.feature-card:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 40px var(--accent-glow);
+}
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.feature-icon svg {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+
+.feature-card h3 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+
+.feature-card p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.section-label {
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: -1px;
+  line-height: 1.15;
+}
+
+/* ─── How it works ─── */
+.how-it-works {
+  padding: 80px 40px 120px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.steps {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  gap: 24px;
+  padding: 28px 0;
+  border-top: 1px solid var(--border);
+}
+
+.step-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.step h3 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 400;
+  margin-bottom: 6px;
+}
+
+.step p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.step code {
+  font-size: 13px;
+  background: var(--bg-elevated);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+
+/* ─── Footer ─── */
+footer {
+  padding: 40px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+footer a:hover { color: var(--accent); }
+
+/* ─── Animations ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  .nav-links { gap: 16px; }
+  .hero { padding: 100px 24px 60px; }
+  h1 { letter-spacing: -1px; }
+  .hero-actions { flex-direction: column; width: 100%; }
+  .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+  .features-grid { grid-template-columns: 1fr; }
+  .preview-body { grid-template-columns: 1fr; }
+  .preview-sidebar { display: none; }
+  footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Open<span>Messages</span></a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#setup">Setup</a>
+    <a href="https://github.com/maxghenis/openmessages" target="_blank">GitHub</a>
+    <a href="https://github.com/maxghenis/openmessages" class="nav-cta">Get started</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="glow-top"></div>
+
+  <div class="hero-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+    Open source &middot; Runs locally &middot; No cloud
+  </div>
+
+  <h1>Your texts,<br><em>AI-native</em></h1>
+
+  <p class="hero-sub">
+    An open-source Google Messages client that gives AI assistants full read/write access to your SMS and RCS messages. Text from your desktop with MCP support built in.
+  </p>
+
+  <div class="hero-actions">
+    <a href="https://github.com/maxghenis/openmessages" class="btn-primary">
+      View on GitHub
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+    <a href="#setup" class="btn-secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      Quick start
+    </a>
+  </div>
+
+  <!-- App preview mockup -->
+  <div class="preview">
+    <div class="preview-window">
+      <div class="preview-titlebar">
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+      </div>
+      <div class="preview-body">
+        <div class="preview-sidebar">
+          <div class="preview-convo active">
+            <div class="preview-avatar">A</div>
+            <div>
+              <div class="preview-convo-name">Alice Chen</div>
+              <div class="preview-convo-sub">Sounds great!</div>
+            </div>
+          </div>
+          <div class="preview-convo">
+            <div class="preview-avatar">M</div>
+            <div>
+              <div class="preview-convo-name">Mom</div>
+              <div class="preview-convo-sub">Call me when free</div>
+            </div>
+          </div>
+          <div class="preview-convo">
+            <div class="preview-avatar">T</div>
+            <div>
+              <div class="preview-convo-name">Team chat</div>
+              <div class="preview-convo-sub">See you at 3</div>
+            </div>
+          </div>
+          <div class="preview-convo">
+            <div class="preview-avatar">D</div>
+            <div>
+              <div class="preview-convo-name">David Park</div>
+              <div class="preview-convo-sub">Thanks!</div>
+            </div>
+          </div>
+        </div>
+        <div class="preview-messages">
+          <div class="preview-msg received">Hey, are we still on for dinner Friday?</div>
+          <div class="preview-msg sent">Yes! 7pm at the usual spot?</div>
+          <div class="preview-msg received">Sounds great! Should I invite Sarah too?</div>
+          <div class="preview-msg sent">
+            <div class="label">via Claude</div>
+            Definitely, the more the merrier. I'll make a reservation for three.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="section-label">Features</div>
+  <div class="section-title">Everything you need,<br>nothing you don't</div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h3>SMS + RCS</h3>
+      <p>Send and receive text messages directly from your desktop. Supports SMS, RCS, and group chats through the Google Messages protocol.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 2a4 4 0 0 0-4 4v4h8V6a4 4 0 0 0-4-4z"/><rect x="3" y="10" width="18" height="12" rx="2"/><circle cx="12" cy="16" r="1"/></svg>
+      </div>
+      <h3>Runs locally</h3>
+      <p>Your messages never leave your machine. SQLite database, local binary, no cloud account required. You own your data completely.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <h3>MCP tools</h3>
+      <p>Seven structured tools for AI assistants via Model Context Protocol. Search messages, send texts, list conversations - all from Claude Code.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <h3>Full-text search</h3>
+      <p>Search across all your messages instantly. Find any conversation, any text, from any contact. Results update in real time.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <h3>Web interface</h3>
+      <p>A clean, responsive messaging UI served from the same binary. Dark theme, keyboard shortcuts, live updates. No Electron needed.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <h3>Open source</h3>
+      <p>MIT licensed. Single Go binary, no dependencies to install. Built on the battle-tested mautrix/gmessages library.</p>
+    </div>
+  </div>
+</section>
+
+<section class="how-it-works" id="setup">
+  <div class="section-label">Quick start</div>
+  <div class="section-title">Three steps to get going</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <h3>Build</h3>
+        <p>Clone the repo and build. Single command: <code>go build -o openmessages .</code></p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <h3>Pair</h3>
+        <p>Run <code>./openmessages pair</code> and scan the QR code with Google Messages on your phone. One-time setup, session persists.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <h3>Run</h3>
+        <p>Start with <code>./openmessages serve</code>. Opens a web UI on port 7007 and an MCP server on stdio. Add to your <code>~/.mcp.json</code> for Claude Code.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>OpenMessages &middot; Open source under MIT</span>
+  <a href="https://github.com/maxghenis/openmessages" target="_blank">GitHub</a>
+</footer>
+
+</body>
+</html>

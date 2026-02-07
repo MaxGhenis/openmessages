@@ -1,0 +1,4 @@
+openmessages
+*.db
+session.json
+.vercel/
