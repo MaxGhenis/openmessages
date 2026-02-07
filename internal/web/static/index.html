@@ -902,22 +902,26 @@ html, body {
   }
 
   // ─── Render Conversations ───
-  function renderConversations(convos) {
-    conversations = convos;
+  function renderConversations(convos, isSearch) {
+    if (!isSearch) conversations = convos;
     $convoList.innerHTML = '';
     if (!convos.length) {
-      $convoList.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px">No conversations yet</div>';
+      const emptyMsg = isSearch ? 'No results found' : 'No conversations yet';
+      $convoList.innerHTML = `<div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px">${emptyMsg}</div>`;
       return;
     }
     convos.forEach(c => {
       const el = document.createElement('div');
       el.className = 'convo-item' + (c.ConversationID === activeConvoId ? ' active' : '');
       el.dataset.id = c.ConversationID;
+      const preview = c._searchPreview
+        ? escapeHtml(c._searchPreview.substring(0, 60))
+        : '&nbsp;';
       el.innerHTML = `
         <div class="convo-avatar">${initials(c.Name)}</div>
         <div class="convo-meta">
           <div class="convo-name">${escapeHtml(c.Name || 'Unknown')}</div>
-          <div class="convo-preview">&nbsp;</div>
+          <div class="convo-preview">${preview}</div>
         </div>
         <div class="convo-time">${formatTime(c.LastMessageTS)}</div>
         ${c.UnreadCount > 0 ? '<div class="convo-unread"></div>' : ''}
@@ -1224,20 +1228,31 @@ html, body {
     }
     searchTimeout = setTimeout(async () => {
       try {
-        const results = await fetchJSON(`/api/search?q=${encodeURIComponent(q)}&limit=20`);
-        // Group search results by conversation
+        const results = await fetchJSON(`/api/search?q=${encodeURIComponent(q)}&limit=30`);
+        // Group search results by conversation, resolve names from conversations list
+        const convoMap = {};
+        conversations.forEach(c => { convoMap[c.ConversationID] = c; });
         const byConvo = {};
         results.forEach(m => {
           if (!byConvo[m.ConversationID]) {
-            byConvo[m.ConversationID] = { name: m.SenderName, body: m.Body, ts: m.TimestampMS, id: m.ConversationID };
+            const convo = convoMap[m.ConversationID];
+            byConvo[m.ConversationID] = {
+              id: m.ConversationID,
+              name: convo ? convo.Name : (m.SenderName || 'Unknown'),
+              body: m.Body,
+              ts: m.TimestampMS,
+              isGroup: convo ? convo.IsGroup : false,
+            };
           }
         });
-        const fakeConvos = Object.values(byConvo).map(c => ({
+        const searchConvos = Object.values(byConvo).map(c => ({
           ConversationID: c.id,
           Name: c.name || 'Unknown',
           LastMessageTS: c.ts,
+          IsGroup: c.isGroup,
+          _searchPreview: c.body,
         }));
-        renderConversations(fakeConvos);
+        renderConversations(searchConvos, true);
       } catch (err) {
         console.error('Search failed:', err);
       }
@@ -1331,7 +1346,9 @@ html, body {
   loadConversations();
   checkStatus();
   setInterval(checkStatus, 10000);
-  setInterval(loadConversations, 5000);
+  setInterval(() => {
+    if (!$searchInput.value.trim()) loadConversations();
+  }, 5000);
 })();
 </script>
 </body>
