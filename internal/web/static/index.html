@@ -210,13 +210,30 @@ html, body {
 }
 
 .convo-unread {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
   background: var(--accent);
-  position: absolute;
-  right: 16px;
-  bottom: 14px;
+  color: var(--bg-deep);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.convo-item.unread .convo-name {
+  font-weight: 600;
+  color: var(--cream);
+}
+
+.convo-item.unread .convo-preview {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 /* ─── Right Pane: Messages ─── */
@@ -326,6 +343,37 @@ html, body {
 }
 
 .msg.sent .msg-time { color: rgba(250, 246, 241, 0.35); }
+
+/* ─── Message Status Indicators ─── */
+.msg-status {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.msg-status.status-sending {
+  color: rgba(250, 246, 241, 0.35);
+  font-size: 10px;
+}
+
+.msg-status.status-sent {
+  color: rgba(250, 246, 241, 0.35);
+}
+
+.msg-status.status-delivered {
+  color: rgba(250, 246, 241, 0.45);
+}
+
+.msg-status.status-read {
+  color: var(--accent);
+}
+
+.msg-status.status-failed {
+  color: #dc503c;
+  font-size: 10px;
+}
 
 .msg-image {
   max-width: 320px;
@@ -758,6 +806,71 @@ html, body {
   .sidebar { display: none; }
   .sidebar.mobile-open { display: flex; position: fixed; inset: 0; z-index: 10; }
 }
+
+/* ─── Light Mode ─── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-deep: #f5f3f0;
+    --bg-surface: #ffffff;
+    --bg-elevated: #eae7e3;
+    --bg-hover: #e2dfdb;
+    --text-primary: #1a1816;
+    --text-secondary: #5c5650;
+    --text-muted: #9a948e;
+    --accent: #d4922e;
+    --accent-dim: rgba(212, 146, 46, 0.12);
+    --accent-glow: rgba(212, 146, 46, 0.06);
+    --cream: #1a1816;
+    --cream-soft: rgba(26, 24, 22, 0.05);
+    --sent-bg: #fdf4e7;
+    --received-bg: #ffffff;
+    --border: rgba(26, 24, 22, 0.1);
+    --border-accent: rgba(212, 146, 46, 0.35);
+    --shadow-soft: 0 2px 20px rgba(0,0,0,0.08);
+    --shadow-glow: 0 0 40px rgba(212, 146, 46, 0.08);
+  }
+
+  /* Scrollbar thumbs */
+  .conversation-list::-webkit-scrollbar-thumb {
+    background: rgba(26, 24, 22, 0.2);
+  }
+
+  .messages-area::-webkit-scrollbar-thumb {
+    background: rgba(26, 24, 22, 0.15);
+  }
+
+  /* Sent message border override (hard-coded in dark mode) */
+  .msg.sent {
+    border-color: rgba(212, 146, 46, 0.2);
+  }
+
+  /* Sent message time color */
+  .msg.sent .msg-time {
+    color: rgba(26, 24, 22, 0.4);
+  }
+
+  /* Send button icon color */
+  .send-btn svg {
+    color: #ffffff;
+  }
+
+  /* Fullscreen overlay slightly lighter backdrop */
+  .msg-image-fullscreen {
+    background: rgba(0, 0, 0, 0.75);
+  }
+
+  /* Reaction pill background uses a light surface */
+  .reaction-pill {
+    background: var(--bg-surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  /* Disconnection banner: soften red tones for light mode */
+  .connection-banner.disconnected {
+    background: rgba(220, 80, 60, 0.08);
+    border-color: rgba(220, 80, 60, 0.2);
+  }
+}
 </style>
 </head>
 <body>
@@ -900,6 +1013,35 @@ html, body {
     return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
   }
 
+  // ─── Message Status Indicator ───
+  function formatStatusIndicator(status) {
+    if (!status) return '';
+    const s = status.toUpperCase();
+    // Sending states
+    if (s.includes('SENDING') || s.includes('YET_TO_SEND') || s.includes('RESENDING') ||
+        s.includes('VALIDATING') || s.includes('SEND_AFTER_PROCESSING') ||
+        s.includes('NOT_DELIVERED_YET')) {
+      return '<span class="msg-status status-sending" title="Sending">\u23F3</span>';
+    }
+    // Read/displayed
+    if (s.includes('DISPLAYED')) {
+      return '<span class="msg-status status-read" title="Read">\u2713\u2713</span>';
+    }
+    // Delivered
+    if (s.includes('DELIVERED')) {
+      return '<span class="msg-status status-delivered" title="Delivered">\u2713\u2713</span>';
+    }
+    // Failed states
+    if (s.includes('FAILED') || s.includes('CANCELED')) {
+      return '<span class="msg-status status-failed" title="Failed">!</span>';
+    }
+    // Sent/complete (default for outgoing)
+    if (s.includes('COMPLETE') || s.includes('OUTGOING')) {
+      return '<span class="msg-status status-sent" title="Sent">\u2713</span>';
+    }
+    return '';
+  }
+
   // ─── API calls ───
   async function fetchJSON(url) {
     const r = await fetch(API + url);
@@ -927,7 +1069,10 @@ html, body {
     }
     convos.forEach(c => {
       const el = document.createElement('div');
-      el.className = 'convo-item' + (c.ConversationID === activeConvoId ? ' active' : '');
+      const hasUnread = c.UnreadCount > 0;
+      el.className = 'convo-item'
+        + (c.ConversationID === activeConvoId ? ' active' : '')
+        + (hasUnread ? ' unread' : '');
       el.dataset.id = c.ConversationID;
       const preview = c._searchPreview
         ? escapeHtml(c._searchPreview.substring(0, 60))
@@ -939,17 +1084,25 @@ html, body {
           <div class="convo-preview">${preview}</div>
         </div>
         <div class="convo-time">${formatTime(c.LastMessageTS)}</div>
-        ${c.UnreadCount > 0 ? '<div class="convo-unread"></div>' : ''}
+        ${hasUnread ? '<div class="convo-unread">' + c.UnreadCount + '</div>' : ''}
       `;
       el.addEventListener('click', () => selectConversation(c));
       $convoList.appendChild(el);
     });
+
+    // Update page title with total unread count
+    updateTitleUnreadCount(convos);
   }
 
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  function updateTitleUnreadCount(convos) {
+    const total = convos.reduce((sum, c) => sum + (c.UnreadCount || 0), 0);
+    document.title = total > 0 ? `(${total}) OpenMessages` : 'OpenMessages';
   }
 
   // ─── Select Conversation ───
@@ -1075,7 +1228,7 @@ html, body {
           } catch(e) {}
         }
 
-        html += `<div class="msg-time">${formatMessageTime(m.TimestampMS)}</div>`;
+        html += `<div class="msg-time">${formatMessageTime(m.TimestampMS)}${m.IsFromMe ? formatStatusIndicator(m.Status) : ''}</div>`;
 
         // Hover action bar (Google Messages style)
         html += `<div class="msg-actions">`;
@@ -1356,6 +1509,126 @@ html, body {
     overlay.addEventListener('click', () => overlay.remove());
     document.body.appendChild(overlay);
   };
+
+  // ─── Keyboard Shortcuts ───
+  // Helper: get ordered list of conversation items in the sidebar
+  function getConvoItems() {
+    return Array.from($convoList.querySelectorAll('.convo-item'));
+  }
+
+  // Helper: index of currently active conversation in sidebar list
+  function getActiveConvoIndex() {
+    const items = getConvoItems();
+    return items.findIndex(el => el.classList.contains('active'));
+  }
+
+  // Helper: select conversation at a given index in the sidebar list
+  function selectConvoByIndex(idx) {
+    const items = getConvoItems();
+    if (items.length === 0) return;
+    const clamped = Math.max(0, Math.min(idx, items.length - 1));
+    items[clamped].click();
+    items[clamped].scrollIntoView({ block: 'nearest' });
+  }
+
+  // Helper: deselect current conversation and return to empty state
+  function deselectConversation() {
+    activeConvoId = null;
+    clearInterval(pollTimer);
+    document.querySelectorAll('.convo-item').forEach(el => el.classList.remove('active'));
+    $emptyState.style.display = '';
+    $chatHeader.style.display = 'none';
+    $messagesArea.style.display = 'none';
+    $composeBar.style.display = 'none';
+    $messagesArea.innerHTML = '';
+    clearReply();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    const tag = (e.target.tagName || '').toLowerCase();
+    const isInput = (tag === 'input' || tag === 'textarea' || e.target.isContentEditable);
+    const mod = e.metaKey || e.ctrlKey;
+
+    // ── Cmd/Ctrl+K: Focus search (works everywhere) ──
+    if (mod && e.key === 'k') {
+      e.preventDefault();
+      $searchInput.focus();
+      $searchInput.select();
+      return;
+    }
+
+    // ── Escape: works everywhere ──
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      // Close fullscreen image viewer if open
+      const fullscreen = document.querySelector('.msg-image-fullscreen');
+      if (fullscreen) { fullscreen.remove(); return; }
+      // Close any open emoji pickers
+      const openPickers = document.querySelectorAll('.emoji-picker.show');
+      if (openPickers.length) { openPickers.forEach(p => p.classList.remove('show')); return; }
+      // Clear search if there is text
+      if ($searchInput.value.trim()) {
+        $searchInput.value = '';
+        loadConversations();
+        $searchInput.blur();
+        return;
+      }
+      // Clear reply indicator if showing
+      if (replyToMsg) { clearReply(); return; }
+      // Deselect conversation
+      if (activeConvoId) { deselectConversation(); return; }
+      // Blur any focused input
+      if (document.activeElement) document.activeElement.blur();
+      return;
+    }
+
+    // ── Cmd/Ctrl+N: New message / focus compose (works everywhere) ──
+    if (mod && e.key === 'n') {
+      e.preventDefault();
+      if (activeConvoId) {
+        $composeInput.focus();
+      } else {
+        // No conversation selected — focus search so user can find/start one
+        $searchInput.focus();
+        $searchInput.select();
+      }
+      return;
+    }
+
+    // ── Cmd/Ctrl+Shift+] : Next conversation (works everywhere) ──
+    if (mod && e.shiftKey && e.key === ']') {
+      e.preventDefault();
+      const idx = getActiveConvoIndex();
+      selectConvoByIndex(idx + 1);
+      return;
+    }
+
+    // ── Cmd/Ctrl+Shift+[ : Previous conversation (works everywhere) ──
+    if (mod && e.shiftKey && e.key === '[') {
+      e.preventDefault();
+      const idx = getActiveConvoIndex();
+      selectConvoByIndex(idx < 0 ? 0 : idx - 1);
+      return;
+    }
+
+    // ── The remaining shortcuts should NOT fire when typing in inputs ──
+    if (isInput) return;
+
+    // ── Up/Down arrows: Navigate conversations in sidebar ──
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const idx = getActiveConvoIndex();
+      selectConvoByIndex(idx + 1);
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const idx = getActiveConvoIndex();
+      selectConvoByIndex(idx < 0 ? 0 : idx - 1);
+      return;
+    }
+  });
 
   // ─── Init ───
   loadConversations();
