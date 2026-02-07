@@ -402,8 +402,52 @@ html, body {
   color: var(--text-muted);
 }
 
-/* ─── React Picker ─── */
-.react-picker {
+/* ─── Message Hover Action Bar (Google Messages style) ─── */
+.msg-actions {
+  position: absolute;
+  top: -16px;
+  display: none;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 4px;
+  box-shadow: var(--shadow-soft);
+  z-index: 20;
+}
+
+.msg.sent .msg-actions { right: 8px; }
+.msg.received .msg-actions { left: 8px; }
+
+.msg:hover .msg-actions { display: flex; }
+
+.msg-actions button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.msg-actions button:hover {
+  background: var(--accent-dim);
+}
+
+.msg-actions button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ─── Emoji Picker (expanded from action bar) ─── */
+.emoji-picker {
   position: absolute;
   bottom: calc(100% + 4px);
   display: none;
@@ -413,15 +457,15 @@ html, body {
   padding: 6px;
   gap: 2px;
   box-shadow: var(--shadow-soft);
-  z-index: 20;
+  z-index: 30;
 }
 
-.react-picker.show { display: flex; }
+.emoji-picker.show { display: flex; }
 
-.msg.sent .react-picker { right: 0; }
-.msg.received .react-picker { left: 0; }
+.msg.sent .emoji-picker { right: 0; }
+.msg.received .emoji-picker { left: 0; }
 
-.react-picker button {
+.emoji-picker button {
   background: none;
   border: none;
   font-size: 20px;
@@ -432,7 +476,7 @@ html, body {
   line-height: 1;
 }
 
-.react-picker button:hover {
+.emoji-picker button:hover {
   background: var(--accent-dim);
 }
 
@@ -1014,8 +1058,14 @@ html, body {
 
         html += `<div class="msg-time">${formatMessageTime(m.TimestampMS)}</div>`;
 
-        // React picker (hidden by default, shown on hover/long-press)
-        html += `<div class="react-picker" id="react-${m.MessageID}">`;
+        // Hover action bar (Google Messages style)
+        html += `<div class="msg-actions">`;
+        html += `<button class="action-react" title="React">😀</button>`;
+        html += `<button class="action-reply" title="Reply"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>`;
+        html += `</div>`;
+
+        // Emoji picker (hidden, toggled by react button)
+        html += `<div class="emoji-picker" id="emoji-${m.MessageID}">`;
         QUICK_EMOJIS.forEach(e => {
           html += `<button onclick="sendReaction('${m.MessageID}','${e}')">${e}</button>`;
         });
@@ -1024,19 +1074,18 @@ html, body {
         el.innerHTML = html;
         el.dataset.msgId = m.MessageID;
 
-        // Double-click to reply
-        el.addEventListener('dblclick', (e) => {
-          e.preventDefault();
-          setReplyTo(m);
+        // Action bar: React button → toggle emoji picker
+        el.querySelector('.action-react').addEventListener('click', (e) => {
+          e.stopPropagation();
+          document.querySelectorAll('.emoji-picker.show').forEach(p => p.classList.remove('show'));
+          const picker = document.getElementById('emoji-' + m.MessageID);
+          if (picker) picker.classList.toggle('show');
         });
 
-        // Right-click (context menu) to show react picker
-        el.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          // Close any other open pickers
-          document.querySelectorAll('.react-picker.show').forEach(p => p.classList.remove('show'));
-          const picker = document.getElementById('react-' + m.MessageID);
-          if (picker) picker.classList.toggle('show');
+        // Action bar: Reply button
+        el.querySelector('.action-reply').addEventListener('click', (e) => {
+          e.stopPropagation();
+          setReplyTo(m);
         });
 
         $messagesArea.appendChild(el);
@@ -1222,7 +1271,7 @@ html, body {
   // ─── Reactions ───
   window.sendReaction = async function(messageId, emoji) {
     // Close picker
-    document.querySelectorAll('.react-picker.show').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.emoji-picker.show').forEach(p => p.classList.remove('show'));
     try {
       await postJSON('/api/react', {
         message_id: messageId,
@@ -1239,8 +1288,8 @@ html, body {
 
   // Close react picker when clicking elsewhere
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.react-picker') && !e.target.closest('.msg')) {
-      document.querySelectorAll('.react-picker.show').forEach(p => p.classList.remove('show'));
+    if (!e.target.closest('.emoji-picker') && !e.target.closest('.msg-actions')) {
+      document.querySelectorAll('.emoji-picker.show').forEach(p => p.classList.remove('show'));
     }
   });
 
