@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy — OpenMessages</title>
+<meta name="description" content="OpenMessages privacy policy. Your messages stay on your device.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #0c0c0c;
+  --bg-surface: #141414;
+  --bg-elevated: #1e1e1e;
+  --text-primary: #faf6f1;
+  --text-secondary: #a09890;
+  --text-muted: #5a5550;
+  --accent: #e8a44a;
+  --accent-dim: rgba(232, 164, 74, 0.12);
+  --border: rgba(250, 246, 241, 0.06);
+  --border-accent: rgba(232, 164, 74, 0.2);
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body { min-height: 100vh; }
+
+nav {
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.nav-logo span { color: var(--accent); }
+
+.content {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 80px 40px 120px;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 400;
+  margin-bottom: 12px;
+}
+
+.last-updated {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  margin-top: 40px;
+  margin-bottom: 12px;
+}
+
+p, li {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+ul {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+
+li { margin-bottom: 8px; }
+
+a { color: var(--accent); }
+
+strong { color: var(--text-primary); }
+
+footer {
+  padding: 40px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+footer a:hover { color: var(--accent); }
+
+@media (max-width: 768px) {
+  .content { padding: 48px 24px 80px; }
+  nav { padding: 16px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Open<span>Messages</span></a>
+  <a href="/" style="color:var(--text-secondary);text-decoration:none;font-size:14px">&larr; Back</a>
+</nav>
+
+<div class="content">
+  <h1>Privacy policy</h1>
+  <p class="last-updated">Last updated: February 7, 2026</p>
+
+  <h2>Summary</h2>
+  <p><strong>OpenMessages does not collect, transmit, or store any of your data outside your device.</strong> Your messages, contacts, and pairing credentials stay entirely on your Mac.</p>
+
+  <h2>What data OpenMessages accesses</h2>
+  <p>When you pair OpenMessages with your Android phone via Google Messages, the app accesses:</p>
+  <ul>
+    <li>Your SMS and RCS message history (conversations, messages, media)</li>
+    <li>Contact names and phone numbers from your message history</li>
+    <li>Your Google Messages pairing session credentials</li>
+  </ul>
+
+  <h2>Where data is stored</h2>
+  <p>All data is stored locally on your Mac in an SQLite database within the app's sandbox directory. Specifically:</p>
+  <ul>
+    <li><strong>Messages and contacts</strong> — SQLite database in the app's Application Support folder</li>
+    <li><strong>Pairing credentials</strong> — stored locally for session persistence</li>
+    <li><strong>Media files</strong> — cached locally when downloaded</li>
+  </ul>
+
+  <h2>What data is transmitted</h2>
+  <ul>
+    <li><strong>To Google</strong> — OpenMessages communicates with Google's servers to send and receive messages through Google Messages, the same as the official Google Messages web client. No additional data is sent to Google beyond what is required for messaging.</li>
+    <li><strong>To us</strong> — Nothing. OpenMessages has no analytics, telemetry, crash reporting, or any server-side component. We do not operate any servers.</li>
+    <li><strong>To AI assistants</strong> — If you enable the MCP server (localhost-only by default), AI tools on your machine can read and send messages through the local API. This data never leaves your device unless you explicitly instruct the AI assistant to do so.</li>
+  </ul>
+
+  <h2>Third-party services</h2>
+  <p>OpenMessages connects to Google Messages servers using the same protocol as the official Google Messages web client. Google's privacy policy applies to the messaging service itself. OpenMessages does not integrate with any other third-party services.</p>
+
+  <h2>Data deletion</h2>
+  <p>Uninstalling OpenMessages removes the app. To delete all stored data, remove the app's Application Support folder. Your messages remain on your Android phone and in Google's systems regardless of OpenMessages.</p>
+
+  <h2>Children's privacy</h2>
+  <p>OpenMessages does not knowingly collect information from children under 13.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes, the updated version will be posted here with a new date. OpenMessages is open source — you can always inspect the code to verify what the app does.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy? Open an issue on <a href="https://github.com/MaxGhenis/openmessages">GitHub</a> or email <a href="mailto:max@maxghenis.com">max@maxghenis.com</a>.</p>
+</div>
+
+<footer>
+  <a href="/">OpenMessages</a> &middot; <a href="https://github.com/maxghenis/openmessages">GitHub</a>
+</footer>
+
+</body>
+</html>
