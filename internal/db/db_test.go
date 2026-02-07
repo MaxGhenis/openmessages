@@ -439,6 +439,68 @@ func TestMediaFieldMigration(t *testing.T) {
 	}
 }
 
+func TestDeleteTmpMessages(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	// Simulate: user sends a message, we store it with tmp_ ID
+	store.UpsertMessage(&Message{
+		MessageID:      "tmp_001234567890",
+		ConversationID: "c1",
+		Body:           "Hello from send",
+		IsFromMe:       true,
+		TimestampMS:    1000,
+	})
+	// Also store a regular message that should NOT be deleted
+	store.UpsertMessage(&Message{
+		MessageID:      "real-msg-1",
+		ConversationID: "c1",
+		Body:           "Normal message",
+		TimestampMS:    900,
+	})
+	// And a tmp_ in a different conversation
+	store.UpsertMessage(&Message{
+		MessageID:      "tmp_999999999999",
+		ConversationID: "c2",
+		Body:           "Other convo",
+		IsFromMe:       true,
+		TimestampMS:    1000,
+	})
+
+	// Delete tmp_ messages for c1 only
+	n, err := store.DeleteTmpMessages("c1")
+	if err != nil {
+		t.Fatalf("delete tmp: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("expected 1 deleted, got %d", n)
+	}
+
+	// c1 should have only the real message
+	msgs, err := store.GetMessagesByConversation("c1", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1 message in c1, got %d", len(msgs))
+	}
+	if msgs[0].MessageID != "real-msg-1" {
+		t.Errorf("expected real-msg-1, got %s", msgs[0].MessageID)
+	}
+
+	// c2 should still have its tmp_ message
+	msgs2, err := store.GetMessagesByConversation("c2", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(msgs2) != 1 {
+		t.Fatalf("expected 1 message in c2, got %d", len(msgs2))
+	}
+}
+
 func TestGetMessagesNoFilters(t *testing.T) {
 	store, err := New(":memory:")
 	if err != nil {

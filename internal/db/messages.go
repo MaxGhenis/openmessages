@@ -116,6 +116,19 @@ func (s *Store) GetMessageByID(messageID string) (*Message, error) {
 	return m, nil
 }
 
+// DeleteTmpMessages removes locally-created tmp_ messages for a conversation.
+// Called when the server echo arrives with a real message ID.
+func (s *Store) DeleteTmpMessages(conversationID string) (int64, error) {
+	result, err := s.db.Exec(
+		`DELETE FROM messages WHERE conversation_id = ? AND message_id LIKE 'tmp_%'`,
+		conversationID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 func scanMessages(rows interface {
 	Next() bool
 	Scan(...any) error
