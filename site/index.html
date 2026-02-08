@@ -562,6 +562,33 @@ footer a:hover { color: var(--accent); }
   border-color: var(--border-accent);
 }
 
+/* ─── Platform tabs (inside CLI setup) ─── */
+.platform-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.platform-tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.platform-tab:hover { color: var(--text-primary); }
+
+.platform-tab.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
 /* ─── Code blocks ─── */
 pre {
   background: var(--bg-elevated);
@@ -752,13 +779,22 @@ pre {
       <div class="step-num">1</div>
       <div>
         <h3>Download the binary</h3>
-        <p>Grab the standalone Go binary for your platform from <a href="https://github.com/MaxGhenis/openmessage/releases/latest" style="color:var(--accent)">GitHub Releases</a>, or build from source:</p>
-        <pre><code># macOS (Apple Silicon)
-curl -L https://github.com/MaxGhenis/openmessage/releases/latest/download/openmessage-darwin-arm64.tar.gz | tar xz
-# Linux (x86_64)
-curl -L https://github.com/MaxGhenis/openmessage/releases/latest/download/openmessage-linux-amd64.tar.gz | tar xz
-
-chmod +x openmessage-* && sudo mv openmessage-* /usr/local/bin/openmessage</code></pre>
+        <p>Grab the standalone Go binary for your platform:</p>
+        <div class="platform-tabs" style="margin-top:12px">
+          <button class="platform-tab active" onclick="switchPlatform('mac-as')">Mac (Apple Silicon)</button>
+          <button class="platform-tab" onclick="switchPlatform('mac-intel')">Mac (Intel)</button>
+          <button class="platform-tab" onclick="switchPlatform('linux-x64')">Linux (x86_64)</button>
+          <button class="platform-tab" onclick="switchPlatform('linux-arm')">Linux (ARM64)</button>
+        </div>
+        <pre id="platform-mac-as"><code>curl -L https://github.com/MaxGhenis/openmessage/releases/latest/download/openmessage-darwin-arm64.tar.gz | tar xz
+sudo mv openmessage-darwin-arm64 /usr/local/bin/openmessage</code></pre>
+        <pre id="platform-mac-intel" style="display:none"><code>curl -L https://github.com/MaxGhenis/openmessage/releases/latest/download/openmessage-darwin-amd64.tar.gz | tar xz
+sudo mv openmessage-darwin-amd64 /usr/local/bin/openmessage</code></pre>
+        <pre id="platform-linux-x64" style="display:none"><code>curl -L https://github.com/MaxGhenis/openmessage/releases/latest/download/openmessage-linux-amd64.tar.gz | tar xz
+sudo mv openmessage-linux-amd64 /usr/local/bin/openmessage</code></pre>
+        <pre id="platform-linux-arm" style="display:none"><code>curl -L https://github.com/MaxGhenis/openmessage/releases/latest/download/openmessage-linux-arm64.tar.gz | tar xz
+sudo mv openmessage-linux-arm64 /usr/local/bin/openmessage</code></pre>
+        <p style="margin-top:8px;font-size:13px;color:var(--text-muted)">Or build from source: <code>go build -o openmessage .</code> from the <a href="https://github.com/maxghenis/openmessage" target="_blank" style="color:var(--accent)">repo</a>.</p>
       </div>
     </div>
     <div class="step">
@@ -767,7 +803,8 @@ chmod +x openmessage-* && sudo mv openmessage-* /usr/local/bin/openmessage</code
         <h3>Pair with your phone</h3>
         <p>Run the pairing command — it shows a QR code right in your terminal:</p>
         <pre><code>openmessage pair</code></pre>
-        <p style="margin-top:8px">Open Google Messages on your phone &rarr; Settings &rarr; Device pairing &rarr; scan the QR code.</p>
+        <p style="margin-top:8px">Open Google Messages on your phone &rarr; <strong>Settings &rarr; Device pairing &rarr; Pair a device</strong> &rarr; scan the QR code.</p>
+        <p style="margin-top:8px;font-size:13px;color:var(--text-muted)"><strong>Note:</strong> If you don't see "Pair a device," go to Settings &rarr; Device pairing and switch from Google account pairing to QR code pairing.</p>
       </div>
     </div>
     <div class="step">
@@ -889,6 +926,14 @@ function switchSetup(mode) {
   document.getElementById('setup-app').style.display = mode === 'app' ? '' : 'none';
   document.getElementById('setup-cli').style.display = mode === 'cli' ? '' : 'none';
   document.querySelectorAll('.setup-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function switchPlatform(id) {
+  ['mac-as','mac-intel','linux-x64','linux-arm'].forEach(p => {
+    document.getElementById('platform-' + p).style.display = p === id ? '' : 'none';
+  });
+  document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
 }
 
