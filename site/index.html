@@ -727,6 +727,34 @@ footer a:hover { color: var(--accent); }
 }</code></pre>
       </div>
     </div>
+
+    <div class="step">
+      <div class="step-num" style="font-family:var(--font-sans);font-size:11px">🦞</div>
+      <div>
+        <h3>OpenClaw integration</h3>
+        <p>OpenClaw supports WhatsApp, Telegram, Discord, Signal, and iMessage — but <strong>not SMS/RCS</strong>. OpenMessage fills that gap. Connect via the <a href="https://github.com/lunarpulse/openclaw-mcp-plugin" target="_blank" style="color:var(--accent)">MCP plugin</a>:</p>
+        <pre style="background:var(--bg-elevated);padding:12px 16px;border-radius:8px;font-size:12px;margin-top:8px;overflow-x:auto;border:1px solid var(--border)"><code>// ~/.openclaw/openclaw.json
+"mcp-integration": {
+  "enabled": true,
+  "config": {
+    "servers": {
+      "openmessage": {
+        "transport": "http",
+        "url": "http://localhost:7007/mcp/sse"
+      }
+    }
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" style="font-family:var(--font-sans);font-size:13px">Any</div>
+      <div>
+        <h3>Works with any MCP client</h3>
+        <p>OpenMessage speaks standard MCP over SSE. Any MCP-compatible client — Cursor, Windsurf, Cline, custom agents — can connect to <code>localhost:7007/mcp/sse</code> and get full read/write access to your texts.</p>
+      </div>
+    </div>
   </div>
 </section>
 
