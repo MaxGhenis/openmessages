@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>OpenMessages — Thesis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0c0c;
+  --surface: #141414;
+  --text: #faf6f1;
+  --text-secondary: #a09890;
+  --text-muted: #5a5550;
+  --accent: #e8a44a;
+  --border: rgba(250, 246, 241, 0.06);
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 80px 24px 120px;
+  line-height: 1.7;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  font-weight: 400;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+h1 em { color: var(--accent); font-style: italic; }
+
+.subtitle {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 60px;
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  margin-top: 56px;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+p { margin-bottom: 16px; color: var(--text-secondary); font-size: 15px; }
+
+strong { color: var(--text); font-weight: 600; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat .number {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat .label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+ul {
+  margin: 16px 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+li { margin-bottom: 8px; }
+
+.table-wrap {
+  margin: 24px 0;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.tag {
+  display: inline-block;
+  background: rgba(232, 164, 74, 0.12);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.confidential {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 36px; }
+  .stat-row { grid-template-columns: 1fr; }
+  body { padding: 40px 16px 80px; }
+}
+</style>
+</head>
+<body>
+
+<div class="confidential">Not for public distribution</div>
+
+<h1>Open<em>Messages</em></h1>
+<p class="subtitle">The open-source, AI-native messaging client. Investment thesis and business plan.</p>
+
+<h2>The opportunity</h2>
+
+<p>Messaging is fragmented. People use 3-5 messaging apps daily. Every attempt to unify them has been closed-source, cloud-dependent, and expensive. <strong>None have AI integration.</strong></p>
+
+<p>Automattic acquired Beeper for $125M and Texts.com for $50M — proving the unified messaging market is real. Beeper now charges $9.99/month and has no AI features, no local API, and no developer ecosystem.</p>
+
+<p>Meanwhile, AI assistants are becoming the primary interface for knowledge workers. MCP (Model Context Protocol) is emerging as the standard for connecting AI to tools. <strong>No messaging client has native AI/MCP support.</strong></p>
+
+<div class="stat-row">
+  <div class="stat">
+    <div class="number">$175M+</div>
+    <div class="label">Acquisitions in unified messaging</div>
+  </div>
+  <div class="stat">
+    <div class="number">$120/yr</div>
+    <div class="label">Beeper premium pricing</div>
+  </div>
+  <div class="stat">
+    <div class="number">0</div>
+    <div class="label">Competitors with MCP/AI</div>
+  </div>
+</div>
+
+<h2>What OpenMessages is</h2>
+
+<p>A <strong>local-first, open-source messaging client</strong> that connects to your messaging services and exposes them to AI assistants via MCP. Currently supports Google Messages (SMS/RCS). Built on the same open-source libraries (mautrix) that power Beeper's $125M product.</p>
+
+<p>Key architectural differences from Beeper:</p>
+
+<ul>
+  <li><strong>Local-first</strong> — messages stay on your machine. No cloud account, no Matrix server, no subscription required for basic use</li>
+  <li><strong>AI-native</strong> — built-in MCP server lets any AI assistant read, search, and send messages across all connected services</li>
+  <li><strong>Open source</strong> — Apache 2.0. Community-driven development, auditable code, extensible by anyone</li>
+  <li><strong>Native apps</strong> — Swift on macOS (not Electron). Planned native apps for all platforms</li>
+</ul>
+
+<h2>Expansion path</h2>
+
+<p>The mautrix ecosystem provides battle-tested Go libraries for every major messaging protocol. Each is a drop-in addition to the existing architecture:</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Service</th><th>Library</th><th>Effort</th><th>Priority</th></tr>
+  <tr><td>Google Messages (SMS/RCS)</td><td>mautrix/gmessages</td><td><span class="tag">Shipped</span></td><td>-</td></tr>
+  <tr><td>WhatsApp</td><td>whatsmeow</td><td>Medium</td><td>High — largest global messaging app</td></tr>
+  <tr><td>Signal</td><td>mautrix-signal</td><td>Medium</td><td>High — privacy-conscious users</td></tr>
+  <tr><td>Telegram</td><td>mautrix-telegram</td><td>Medium</td><td>Medium</td></tr>
+  <tr><td>Discord</td><td>mautrix-discord</td><td>Medium</td><td>Medium — dev/community audience</td></tr>
+  <tr><td>Slack</td><td>mautrix-slack</td><td>Medium</td><td>Medium — work messaging</td></tr>
+  <tr><td>iMessage</td><td>beeper/imessage</td><td>Hard</td><td>High — but requires Mac host or jailbreak</td></tr>
+  <tr><td>Instagram DMs</td><td>mautrix-meta</td><td>Medium</td><td>Lower</td></tr>
+</table>
+</div>
+
+<p>Each new protocol adds to the same unified UI and the same MCP server. AI assistants get access to all services through one interface.</p>
+
+<h2>Business model</h2>
+
+<p>Open-source core, commercial premium. Similar to GitLab, Supabase, PostHog.</p>
+
+<ul>
+  <li><strong>Free tier</strong> — open-source app with unlimited messaging services, local MCP server. Community-supported</li>
+  <li><strong>Premium ($10/month)</strong> — hosted AI features: smart replies, conversation summaries, priority inbox, natural language search, cross-service context. BYO API key or included credits</li>
+  <li><strong>Team/Enterprise</strong> — shared AI context across team communications, compliance features, SSO, admin controls</li>
+</ul>
+
+<p>The free tier is the distribution engine. Users adopt for the unified client, upgrade for AI features. Open source builds trust and community contributions — the same model that made Beeper viable enough for a $125M exit.</p>
+
+<h2>Competitive landscape</h2>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Product</th><th>Open source</th><th>Local-first</th><th>AI/MCP</th><th>Price</th></tr>
+  <tr><td><strong>OpenMessages</strong></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Free / $10 premium</td></tr>
+  <tr><td>Beeper (Automattic)</td><td>Partial</td><td>No (cloud)</td><td>No</td><td>Free / $10 premium</td></tr>
+  <tr><td>Franz / Ferdi</td><td>Partial</td><td>Yes</td><td>No</td><td>Free / $4</td></tr>
+  <tr><td>Pidgin / Finch</td><td>Yes</td><td>Yes</td><td>No</td><td>Free</td></tr>
+  <tr><td>Google Messages Web</td><td>No</td><td>N/A</td><td>No</td><td>Free</td></tr>
+</table>
+</div>
+
+<p>No competitor occupies the <strong>open source + local-first + AI-native</strong> intersection.</p>
+
+<h2>Why now</h2>
+
+<ul>
+  <li><strong>MCP adoption is accelerating</strong> — Anthropic, OpenAI, and the broader ecosystem are converging on MCP as the standard for AI-tool integration. First-mover in messaging + MCP is a strong position</li>
+  <li><strong>AI assistants are becoming primary interfaces</strong> — users increasingly want to say "check my messages" rather than switch apps. The assistant that can actually do this wins</li>
+  <li><strong>Beeper proved the market</strong> — $125M acquisition validates unified messaging. But Beeper chose cloud-first and hasn't shipped AI. The local-first + AI opportunity is wide open</li>
+  <li><strong>mautrix libraries are mature</strong> — years of development, battle-tested by Beeper at scale. We don't need to reverse-engineer protocols from scratch</li>
+</ul>
+
+<h2>Traction</h2>
+
+<ul>
+  <li>Working macOS app with Google Messages support (SMS + RCS)</li>
+  <li>Built-in MCP server with 7 tools, Claude Code plugin</li>
+  <li>Open-source on GitHub (Apache 2.0)</li>
+  <li>Product site at <a href="https://openmessages.ai">openmessages.ai</a></li>
+  <li>Launching publicly February 2026</li>
+</ul>
+
+<h2>Team</h2>
+
+<p><strong>Max Ghenis</strong> — founder. Previously founded <a href="https://policyengine.org">PolicyEngine</a> (open-source tax-benefit microsimulation, used by White House, Congress, UK Parliament). Deep experience shipping open-source software, building developer communities, and working at the intersection of policy and technology.</p>
+
+<h2>Ask</h2>
+
+<p>Seeking collaborators, contributors, and early believers. If you're interested in the future of AI-native communication, <a href="mailto:max@policyengine.org">get in touch</a>.</p>
+
+</body>
+</html>
