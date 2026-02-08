@@ -33,7 +33,7 @@ html {
 body {
   max-width: 680px;
   margin: 0 auto;
-  padding: 80px 24px 120px;
+  padding: 120px 24px 120px;
   line-height: 1.7;
 }
 
@@ -97,6 +97,71 @@ a:hover { text-decoration: underline; }
   margin-top: 4px;
 }
 
+/* ─── Nav ─── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(12, 12, 12, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-logo span { color: var(--accent); }
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  background: var(--accent) !important;
+  color: var(--bg) !important;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: transform 0.15s, opacity 0.15s !important;
+}
+
+.nav-cta:hover { transform: scale(1.03); opacity: 0.9; }
+
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.nav-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
 ul {
   margin: 16px 0;
   padding-left: 20px;
@@ -153,14 +218,49 @@ td {
   margin-bottom: 40px;
 }
 
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  .nav-toggle { display: block; }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: rgba(12, 12, 12, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 16px 20px;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-links.open { display: flex; }
+  .nav-cta { text-align: center; }
+}
+
 @media (max-width: 600px) {
   h1 { font-size: 36px; }
   .stat-row { grid-template-columns: 1fr; }
-  body { padding: 40px 16px 80px; }
+  body { padding: 100px 16px 80px; }
 }
 </style>
 </head>
 <body>
+
+<nav>
+  <a href="/" class="nav-logo">Open<span>Messages</span></a>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="nav-links">
+    <a href="/#features">Features</a>
+    <a href="/#setup">Setup</a>
+    <a href="/#ai">AI integration</a>
+    <a href="https://github.com/maxghenis/openmessages" target="_blank">GitHub</a>
+    <a href="https://github.com/sponsors/MaxGhenis" target="_blank">Sponsor</a>
+    <a href="https://github.com/MaxGhenis/openmessages/releases/latest/download/OpenMessages.dmg" class="nav-cta">Download</a>
+  </div>
+</nav>
 
 <div class="confidential">Not for public distribution</div>
 
