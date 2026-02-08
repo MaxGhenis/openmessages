@@ -176,8 +176,15 @@ h1 em {
   margin-top: 48px;
   display: flex;
   gap: 16px;
-  align-items: center;
+  align-items: stretch;
   animation: fadeUp 0.6s ease-out 0.3s both;
+}
+
+.hero-actions .btn-primary,
+.hero-actions .btn-secondary {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
 }
 
 .btn-primary {
