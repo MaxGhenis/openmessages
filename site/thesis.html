@@ -243,12 +243,47 @@ td {
   .stat-row { grid-template-columns: 1fr; }
   body { padding: 100px 16px 80px; }
 }
+
+/* ─── Light mode ─── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #faf8f5;
+    --surface: #ffffff;
+    --text: #1a1816;
+    --text-secondary: #5c5650;
+    --text-muted: #9a948e;
+    --accent: #d4922e;
+    --border: rgba(26, 24, 22, 0.08);
+  }
+
+  nav {
+    background: rgba(250, 248, 245, 0.85);
+  }
+
+  .nav-cta {
+    color: #fff !important;
+  }
+
+  .stat {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  .tag {
+    background: rgba(212, 146, 46, 0.1);
+  }
+
+  @media (max-width: 768px) {
+    .nav-links {
+      background: rgba(250, 248, 245, 0.97);
+    }
+  }
+}
 </style>
 </head>
 <body>
 
 <nav>
-  <a href="/" class="nav-logo">Open<span>Messages</span></a>
+  <a href="/" class="nav-logo">Open<span>Message</span></a>
   <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle menu">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
@@ -264,7 +299,7 @@ td {
 
 <div class="confidential">Not for public distribution</div>
 
-<h1>Open<em>Messages</em></h1>
+<h1>Open<em>Message</em></h1>
 <p class="subtitle">The open-source, AI-native messaging client. Investment thesis and business plan.</p>
 
 <h2>The opportunity</h2>
