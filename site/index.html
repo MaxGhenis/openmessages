@@ -463,6 +463,66 @@ footer a:hover { color: var(--accent); }
   .preview-screenshot { border-radius: 0 0 10px 10px; }
   footer { flex-direction: column; gap: 12px; text-align: center; }
 }
+
+/* ─── Light mode ─── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-deep: #faf8f5;
+    --bg-surface: #ffffff;
+    --bg-elevated: #f0ede9;
+    --text-primary: #1a1816;
+    --text-secondary: #5c5650;
+    --text-muted: #9a948e;
+    --accent: #d4922e;
+    --accent-dim: rgba(212, 146, 46, 0.1);
+    --accent-glow: rgba(212, 146, 46, 0.06);
+    --border: rgba(26, 24, 22, 0.08);
+    --border-accent: rgba(212, 146, 46, 0.3);
+  }
+
+  body::before { opacity: 0.015; }
+
+  .glow-top {
+    background: radial-gradient(ellipse, rgba(212, 146, 46, 0.06) 0%, transparent 70%);
+  }
+
+  nav {
+    background: rgba(250, 248, 245, 0.85);
+  }
+
+  .nav-cta {
+    background: var(--accent) !important;
+    color: #fff !important;
+  }
+
+  .preview-window {
+    box-shadow: 0 40px 80px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
+  }
+
+  .preview-dot { background: var(--bg-elevated); border-color: rgba(0,0,0,0.08); }
+  .preview-dot:first-child { background: #ff5f57; border-color: #e0443e; }
+  .preview-dot:nth-child(2) { background: #ffbd2e; border-color: #dea123; }
+  .preview-dot:nth-child(3) { background: #28c840; border-color: #1aab29; }
+
+  .feature-card:hover {
+    box-shadow: 0 4px 30px rgba(212, 146, 46, 0.08);
+  }
+
+  .step code {
+    background: var(--bg-elevated);
+    color: #b07820;
+  }
+
+  pre {
+    background: var(--bg-elevated) !important;
+  }
+
+  @media (max-width: 768px) {
+    .nav-links {
+      background: rgba(250, 248, 245, 0.97);
+    }
+  }
+}
 </style>
 </head>
 <body>
@@ -515,7 +575,10 @@ footer a:hover { color: var(--accent); }
         <div class="preview-dot"></div>
         <div class="preview-dot"></div>
       </div>
-      <img src="screenshot.png" alt="OpenMessage app showing a conversation with messages, reactions, and a sidebar of recent chats" class="preview-screenshot">
+      <picture>
+        <source srcset="screenshot-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="screenshot-light.png" alt="OpenMessage app showing a conversation with messages, reactions, and a sidebar of recent chats" class="preview-screenshot">
+      </picture>
     </div>
   </div>
 </section>
