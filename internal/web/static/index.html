@@ -400,6 +400,7 @@ html, body {
 .messages-area {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px 28px;
   display: flex;
   flex-direction: column;
@@ -1245,6 +1246,11 @@ html, body {
 
   .draft-banner { background: #eef2ff; border-color: rgba(99,102,241,0.2); }
 
+  .msg-status.status-sending { color: rgba(26, 24, 22, 0.35); }
+  .msg-status.status-sent { color: rgba(26, 24, 22, 0.35); }
+  .msg-status.status-delivered { color: rgba(26, 24, 22, 0.5); }
+  .msg-status.status-read { color: var(--accent); }
+
   /* Scrollbar thumbs */
   .conversation-list::-webkit-scrollbar-thumb {
     background: rgba(26, 24, 22, 0.2);
@@ -1659,6 +1665,7 @@ html, body {
     }
     lastMsgCount = -1; // Force re-render on conversation switch
     lastDraftCount = -1;
+    lastStatusSig = '';
     await loadMessages(convo.ConversationID);
 
     // Start polling for new messages
@@ -1669,6 +1676,7 @@ html, body {
   // ─── Load Messages ───
   let lastMsgCount = 0;
   let lastDraftCount = 0;
+  let lastStatusSig = '';
 
   async function loadMessages(convoId) {
     try {
@@ -1682,7 +1690,11 @@ html, body {
         const draftCheck = await fetchJSON(`/api/drafts?conversation_id=${encodeURIComponent(convoId)}&_t=${Date.now()}`);
         draftCount = draftCheck.length;
       } catch (e) {}
-      if (msgs.length === lastMsgCount && draftCount === lastDraftCount && convoId === activeConvoId) return;
+      // Track latest outgoing status to detect delivery updates
+      const lastOut = msgs.findLast(m => m.IsFromMe);
+      const statusSig = lastOut ? (lastOut.MessageID + ':' + (lastOut.Status || '')) : '';
+      if (msgs.length === lastMsgCount && draftCount === lastDraftCount && statusSig === lastStatusSig && convoId === activeConvoId) return;
+      lastStatusSig = statusSig;
       lastMsgCount = msgs.length;
       lastDraftCount = draftCount;
 
@@ -1893,7 +1905,7 @@ html, body {
   }
 
   // ─── Draft Actions ───
-  async function sendDraft(draftId, btn) {
+  window.sendDraft = async function(draftId, btn) {
     const banner = btn.closest('.draft-banner');
     const msgText = banner.querySelector('.draft-text').value.trim();
     if (!msgText) return;
@@ -1909,7 +1921,7 @@ html, body {
     }
   }
 
-  async function discardDraft(draftId) {
+  window.discardDraft = async function(draftId) {
     try {
       await fetch(`/api/drafts/${encodeURIComponent(draftId)}`, {method: 'DELETE'});
       loadMessages(activeConvoId);

@@ -235,7 +235,7 @@ h1 em {
 .preview {
   margin-top: 80px;
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
   animation: fadeUp 0.8s ease-out 0.4s both;
 }
 
@@ -271,6 +271,13 @@ h1 em {
   width: 100%;
   display: block;
   border-radius: 0 0 12px 12px;
+}
+
+.preview-split {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+  filter: drop-shadow(0 40px 80px rgba(0,0,0,0.4));
 }
 
 /* ─── Features ─── */
@@ -669,19 +676,12 @@ pre {
     </a>
   </div>
 
-  <!-- App preview mockup -->
+  <!-- Split-screen hero: App + Claude Code -->
   <div class="preview">
-    <div class="preview-window">
-      <div class="preview-titlebar">
-        <div class="preview-dot"></div>
-        <div class="preview-dot"></div>
-        <div class="preview-dot"></div>
-      </div>
-      <picture>
-        <source srcset="screenshot-dark.png" media="(prefers-color-scheme: dark)">
-        <img src="screenshot-light.png" alt="OpenMessage app showing a conversation with messages, reactions, and a sidebar of recent chats" class="preview-screenshot">
-      </picture>
-    </div>
+    <picture>
+      <source srcset="hero-split-dark.png" media="(prefers-color-scheme: dark)">
+      <img src="hero-split-light.png" alt="OpenMessage app on the left showing a conversation with an AI draft, and Claude Code terminal on the right drafting a reply" class="preview-split">
+    </picture>
   </div>
 </section>
 
