@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1e1e1e;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Menlo', 'Monaco', monospace;
+  color: #d4d4d4;
+  width: 2000px;
+  height: 1802px;
+  overflow: hidden;
+}
+
+/* macOS window chrome */
+.chrome {
+  background: #2d2d2d;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: relative;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.dot.red { background: #ff5f57; }
+.dot.yellow { background: #ffbd2e; }
+.dot.green { background: #27c93f; }
+
+.chrome-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #999;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Terminal content */
+.content {
+  padding: 24px 32px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Claude Code header */
+.header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.mascot {
+  color: #e8896b;
+  font-size: 15px;
+  line-height: 1.15;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-text .version {
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.header-text .meta {
+  color: #777;
+  font-size: 13px;
+}
+
+.header-text .promo {
+  color: #e8896b;
+  font-size: 13px;
+}
+
+/* Prompt */
+.prompt-char {
+  color: #e8896b;
+  font-weight: 700;
+}
+
+.prompt-text {
+  color: #fff;
+}
+
+/* Spinner / thinking */
+.spinner {
+  color: #e8896b;
+  margin: 16px 0;
+}
+
+/* Tool calls */
+.tool-line {
+  margin: 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-dot {
+  color: #50c878;
+  font-size: 10px;
+}
+
+.tool-text {
+  color: #999;
+  font-size: 14px;
+}
+
+/* Output text */
+.output {
+  margin: 16px 0;
+  font-size: 15px;
+}
+
+.output .label {
+  color: #777;
+}
+
+.output .quoted {
+  color: #e8a44a;
+  margin-left: 20px;
+}
+
+.output .result {
+  color: #d4d4d4;
+  margin-top: 12px;
+}
+
+/* New prompt at bottom */
+.cursor-block {
+  display: inline-block;
+  width: 9px;
+  height: 18px;
+  background: #aeafad;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+}
+
+/* Bottom status bar */
+.status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: #232323;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 12px;
+  font-size: 13px;
+  color: #777;
+}
+
+.status-dots {
+  color: #c8a84a;
+}
+
+/* separator */
+hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 16px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="chrome">
+  <div class="dots">
+    <div class="dot red"></div>
+    <div class="dot yellow"></div>
+    <div class="dot green"></div>
+  </div>
+  <div class="chrome-title">Terminal</div>
+</div>
+
+<div class="content">
+  <div class="header">
+    <div class="mascot"><pre style="margin:0;font-family:inherit;font-size:inherit;line-height:1.15;background:none;border:none;padding:0;color:inherit"> ▐▛███▜▌
+▝▜█████▛▘
+  ▘▘ ▝▝</pre></div>
+    <div class="header-text">
+      <span class="version">Claude Code v2.1.37</span>
+      <span class="meta">Opus 4.6 · Claude Max</span>
+      <span class="meta">/Users/maxghenis</span>
+    </div>
+  </div>
+
+  <div style="margin: 20px 0;">
+    <span class="prompt-char">❯</span>
+    <span class="prompt-text"> Sarah mentioned a Thai place on Valencia. Send her the address</span>
+  </div>
+
+  <div class="spinner">⏺ Searching for Thai restaurants on Valencia St...</div>
+
+  <div style="margin: 12px 0;">
+    <div class="tool-line"><span class="tool-dot">●</span><span class="tool-text">Read conversation with Sarah Chen</span></div>
+    <div class="tool-line"><span class="tool-dot">●</span><span class="tool-text">Searched for Thai restaurants on Valencia St, SF</span></div>
+    <div class="tool-line"><span class="tool-dot">●</span><span class="tool-text">Called draft_message</span></div>
+  </div>
+
+  <div class="output">
+    <div class="label">message:</div>
+    <div class="quoted">"Hey! That Thai place is Kin Khao at 55 Cyril</div>
+    <div class="quoted">Magnin St. Open til 10pm tonight and has 4.5</div>
+    <div class="quoted">stars. Want me to book on OpenTable?"</div>
+  </div>
+
+  <div class="output result">
+    Draft created. It will appear in the OpenMessage app for you to review and send.
+  </div>
+
+  <div style="margin-top: 24px;">
+    <span class="prompt-char">❯</span><span class="cursor-block"></span>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span class="status-dots">●●</span>
+  <span>bypass permissions on</span>
+  <span style="margin-left:auto; color:#555">esc to interrupt</span>
+</div>
+
+</body>
+</html>
