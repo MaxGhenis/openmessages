@@ -65,7 +65,8 @@ func getConversationHandler(a *app.App) server.ToolHandlerFunc {
 			if sender == "" {
 				sender = "Unknown"
 			}
-			fmt.Fprintf(&sb, "[%s] %s %s: «%s»\n", ts, direction, sender, m.Body)
+			display := formatMessageBody(m.Body, m.MediaID, m.MimeType, m.MessageID)
+			fmt.Fprintf(&sb, "[%s] %s %s: «%s»\n", ts, direction, sender, display)
 		}
 		return textResult(sb.String()), nil
 	}

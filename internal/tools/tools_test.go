@@ -276,6 +276,174 @@ func TestListContacts(t *testing.T) {
 	}
 }
 
+func TestFormatMessageBody(t *testing.T) {
+	// Plain text message — no media
+	got := formatMessageBody("Hello!", "", "", "msg-1")
+	if got != "Hello!" {
+		t.Errorf("plain text: expected 'Hello!', got: %s", got)
+	}
+
+	// Voice message with no body text
+	got = formatMessageBody("", "media-123", "audio/ogg", "msg-2")
+	if !contains(got, "voice message") {
+		t.Errorf("voice message: expected 'voice message' tag, got: %s", got)
+	}
+	if !contains(got, "msg-2") {
+		t.Errorf("voice message: expected message_id in output, got: %s", got)
+	}
+
+	// Image with caption
+	got = formatMessageBody("Check this out", "media-456", "image/jpeg", "msg-3")
+	if !contains(got, "Check this out") {
+		t.Errorf("image with caption: expected caption, got: %s", got)
+	}
+	if !contains(got, "image") {
+		t.Errorf("image with caption: expected 'image' tag, got: %s", got)
+	}
+
+	// Video
+	got = formatMessageBody("", "media-789", "video/mp4", "msg-4")
+	if !contains(got, "video") {
+		t.Errorf("video: expected 'video' tag, got: %s", got)
+	}
+
+	// Unknown attachment type
+	got = formatMessageBody("", "media-000", "application/pdf", "msg-5")
+	if !contains(got, "attachment") {
+		t.Errorf("unknown: expected 'attachment' tag, got: %s", got)
+	}
+}
+
+func TestGetMessagesMediaIndicator(t *testing.T) {
+	a := testApp(t)
+	now := time.Now().UnixMilli()
+
+	// Insert a voice message (empty body, has media)
+	a.Store.UpsertMessage(&db.Message{
+		MessageID:      "vm-1",
+		ConversationID: "c1",
+		SenderName:     "Jenn",
+		SenderNumber:   "+14699991654",
+		Body:           "",
+		TimestampMS:    now,
+		IsFromMe:       false,
+		MediaID:        "media-abc",
+		MimeType:       "audio/ogg",
+		DecryptionKey:  "deadbeef",
+	})
+
+	handler := getMessagesHandler(a)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{}
+
+	result, err := handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	text := result.Content[0].(mcp.TextContent).Text
+	if !contains(text, "voice message") {
+		t.Errorf("expected 'voice message' indicator, got: %s", text)
+	}
+	if !contains(text, "vm-1") {
+		t.Errorf("expected message_id 'vm-1' in output for download_media, got: %s", text)
+	}
+}
+
+func TestDownloadMediaNoMessage(t *testing.T) {
+	a := testApp(t)
+
+	handler := downloadMediaHandler(a)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"message_id": "nonexistent"}
+
+	result, err := handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("expected error for nonexistent message")
+	}
+	text := result.Content[0].(mcp.TextContent).Text
+	if !contains(text, "not found") {
+		t.Errorf("expected 'not found' error, got: %s", text)
+	}
+}
+
+func TestDownloadMediaNoMediaID(t *testing.T) {
+	a := testApp(t)
+	now := time.Now().UnixMilli()
+
+	a.Store.UpsertMessage(&db.Message{
+		MessageID:      "text-msg",
+		ConversationID: "c1",
+		Body:           "Just text",
+		TimestampMS:    now,
+	})
+
+	handler := downloadMediaHandler(a)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"message_id": "text-msg"}
+
+	result, err := handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("expected error for message with no media")
+	}
+	text := result.Content[0].(mcp.TextContent).Text
+	if !contains(text, "no media") {
+		t.Errorf("expected 'no media' error, got: %s", text)
+	}
+}
+
+func TestDownloadMediaNotConnected(t *testing.T) {
+	a := testApp(t)
+	now := time.Now().UnixMilli()
+
+	a.Store.UpsertMessage(&db.Message{
+		MessageID:      "media-msg",
+		ConversationID: "c1",
+		Body:           "",
+		TimestampMS:    now,
+		MediaID:        "mid-123",
+		MimeType:       "audio/ogg",
+		DecryptionKey:  "deadbeef",
+	})
+
+	handler := downloadMediaHandler(a)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{"message_id": "media-msg"}
+
+	result, err := handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("expected error when not connected")
+	}
+	text := result.Content[0].(mcp.TextContent).Text
+	if !contains(text, "not connected") {
+		t.Errorf("expected 'not connected' error, got: %s", text)
+	}
+}
+
+func TestDownloadMediaMissingID(t *testing.T) {
+	a := testApp(t)
+
+	handler := downloadMediaHandler(a)
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]any{}
+
+	result, err := handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("expected error for missing message_id")
+	}
+}
+
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsStr(s, substr))
 }

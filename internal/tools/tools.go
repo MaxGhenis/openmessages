@@ -1,6 +1,9 @@
 package tools
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
@@ -16,6 +19,7 @@ func Register(s *server.MCPServer, a *app.App) {
 	s.AddTool(listContactsTool(), listContactsHandler(a))
 	s.AddTool(getStatusTool(), getStatusHandler(a))
 	s.AddTool(draftMessageTool(), draftMessageHandler(a))
+	s.AddTool(downloadMediaTool(), downloadMediaHandler(a))
 }
 
 func strArg(args map[string]any, key string) string {
@@ -49,6 +53,31 @@ func textResult(text string) *mcp.CallToolResult {
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{mcp.NewTextContent(text)},
 	}
+}
+
+// formatMessageBody returns the display text for a message, annotating media
+// attachments when present. The message_id is included for media messages so
+// the user can call download_media.
+func formatMessageBody(body, mediaID, mimeType, messageID string) string {
+	if mediaID == "" {
+		return body
+	}
+	var tag string
+	switch {
+	case strings.HasPrefix(mimeType, "audio/"):
+		tag = "voice message"
+	case strings.HasPrefix(mimeType, "image/"):
+		tag = "image"
+	case strings.HasPrefix(mimeType, "video/"):
+		tag = "video"
+	default:
+		tag = "attachment"
+	}
+	label := fmt.Sprintf("[%s, message_id: %s]", tag, messageID)
+	if body != "" {
+		return body + " " + label
+	}
+	return label
 }
 
 func errorResult(msg string) *mcp.CallToolResult {

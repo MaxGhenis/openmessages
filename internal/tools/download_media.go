@@ -1,0 +1,108 @@
+package tools
+
+import (
+	"context"
+	"encoding/hex"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
+
+	"github.com/maxghenis/openmessage/internal/app"
+)
+
+func downloadMediaTool() mcp.Tool {
+	return mcp.NewTool("download_media",
+		mcp.WithDescription("Download media (voice messages, images, videos) from a message and save to a local file. Returns the file path."),
+		mcp.WithString("message_id", mcp.Required(), mcp.Description("The message ID containing the media")),
+		mcp.WithReadOnlyHintAnnotation(true),
+		mcp.WithDestructiveHintAnnotation(false),
+	)
+}
+
+func downloadMediaHandler(a *app.App) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := req.GetArguments()
+		msgID := strArg(args, "message_id")
+		if msgID == "" {
+			return errorResult("message_id is required"), nil
+		}
+
+		msg, err := a.Store.GetMessageByID(msgID)
+		if err != nil {
+			return errorResult(fmt.Sprintf("get message: %v", err)), nil
+		}
+		if msg == nil {
+			return errorResult("message not found"), nil
+		}
+		if msg.MediaID == "" {
+			return errorResult("this message has no media attachment"), nil
+		}
+
+		if a.Client == nil {
+			return errorResult("not connected to Google Messages"), nil
+		}
+
+		key, err := hex.DecodeString(msg.DecryptionKey)
+		if err != nil {
+			return errorResult(fmt.Sprintf("invalid decryption key: %v", err)), nil
+		}
+
+		data, err := a.Client.GM.DownloadMedia(msg.MediaID, key)
+		if err != nil {
+			return errorResult(fmt.Sprintf("download media: %v", err)), nil
+		}
+
+		// Determine file extension from mime type
+		ext := extensionForMime(msg.MimeType)
+
+		// Save to a temp file
+		tmpDir := os.TempDir()
+		filename := fmt.Sprintf("openmessage-%s%s", msgID, ext)
+		filePath := filepath.Join(tmpDir, filename)
+
+		if err := os.WriteFile(filePath, data, 0644); err != nil {
+			return errorResult(fmt.Sprintf("write file: %v", err)), nil
+		}
+
+		return textResult(fmt.Sprintf("Downloaded %s (%d bytes) to:\n%s", msg.MimeType, len(data), filePath)), nil
+	}
+}
+
+func extensionForMime(mime string) string {
+	switch {
+	case strings.HasPrefix(mime, "audio/ogg"):
+		return ".ogg"
+	case strings.HasPrefix(mime, "audio/aac"):
+		return ".aac"
+	case strings.HasPrefix(mime, "audio/mp4"), strings.HasPrefix(mime, "audio/m4a"):
+		return ".m4a"
+	case strings.HasPrefix(mime, "audio/mpeg"):
+		return ".mp3"
+	case strings.HasPrefix(mime, "audio/amr"):
+		return ".amr"
+	case strings.HasPrefix(mime, "audio/"):
+		return ".audio"
+	case strings.HasPrefix(mime, "image/jpeg"):
+		return ".jpg"
+	case strings.HasPrefix(mime, "image/png"):
+		return ".png"
+	case strings.HasPrefix(mime, "image/gif"):
+		return ".gif"
+	case strings.HasPrefix(mime, "image/webp"):
+		return ".webp"
+	case strings.HasPrefix(mime, "image/"):
+		return ".img"
+	case strings.HasPrefix(mime, "video/mp4"):
+		return ".mp4"
+	case strings.HasPrefix(mime, "video/3gpp"):
+		return ".3gp"
+	case strings.HasPrefix(mime, "video/"):
+		return ".video"
+	default:
+		return ".bin"
+	}
+}
